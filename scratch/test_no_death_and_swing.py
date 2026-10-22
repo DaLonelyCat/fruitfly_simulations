@@ -24,10 +24,10 @@ def test_no_death_and_hanging_moss_swing():
     assert starving_fly.action != "dead", f"Fly action should not be 'dead', got '{starving_fly.action}'"
     assert abs(starving_fly.roll - math.pi) > 1.0, "Fly should not be flipped onto dorsal back in rigor mortis"
 
-    # 2. Test Combat: Enraged flies brawl without mortal consequences
+    # 2. Test Combat: Enraged flies brawl without mortal consequences (in open arena)
     print("\n[2] Testing Bad-Mood Combat: Aggression without lethal damage")
-    aggressor = FruitFlyAgent(fly_id=10, archetype_name="Brawler", x=60.0, y=60.0, z=1.6)
-    victim = FruitFlyAgent(fly_id=11, archetype_name="Zen", x=63.0, y=60.0, z=1.6)
+    aggressor = FruitFlyAgent(fly_id=10, archetype_name="Brawler", x=90.0, y=30.0, z=1.6)
+    victim = FruitFlyAgent(fly_id=11, archetype_name="Zen", x=93.0, y=30.0, z=1.6)
     
     aggressor.mood = 0.10  # Enraged
     aggressor.attack_cooldown = 0.0

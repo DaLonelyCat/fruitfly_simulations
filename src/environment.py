@@ -465,12 +465,26 @@ class SimulationEnvironment:
 
         # Mood and Dominance Shift from Combat (No mortal damage)
         if hasattr(target, 'mood'):
-            target.mood = max(0.0, target.mood - 0.22)
+            target.mood = max(0.10, target.mood - 0.06)
         if hasattr(aggressor, 'mood'):
-            aggressor.mood = min(1.0, aggressor.mood + 0.15)  # Dominance boost
+            aggressor.mood = min(1.0, aggressor.mood + 0.05)  # Dominance boost
         
         pair_key = f"{min(aggressor.id, target.id)}-{max(aggressor.id, target.id)}"
         self.interaction_matrix[pair_key] = self.interaction_matrix.get(pair_key, 0) + 1
+
+    def record_dopamine_surge(self, fly, food_label="fruit"):
+        """Records a successful feeding dopamine reward event."""
+        event = {
+            "type": "dopamine_surge",
+            "fly_id": fly.id,
+            "fly_name": fly.archetype_name,
+            "food_label": food_label,
+            "timestamp_step": len(self.events)
+        }
+        self.events.append(event)
+        self.dopamine_events.append(event)
+        if len(self.dopamine_events) > 100:
+            self.dopamine_events.pop(0)
 
     def step(self, dt_sec=0.016, dt=None):
         """Simulates 3D environmental dynamics including food dropping physics."""
@@ -606,5 +620,6 @@ class SimulationEnvironment:
             "recent_events": self.events[-12:],
             "total_courtships": len(self.courtship_events),
             "total_fights": len(self.fight_events),
+            "total_dopamine_surges": len(self.dopamine_events),
             "interaction_pairs": self.interaction_matrix
         }

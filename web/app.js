@@ -617,6 +617,9 @@
     if (currentState.environment) {
       statCourtshipCount.textContent = currentState.environment.total_courtships || 0;
       statFightCount.textContent = currentState.environment.total_fights || 0;
+      statDopamineCount.textContent = currentState.environment.total_dopamine_surges !== undefined
+        ? currentState.environment.total_dopamine_surges
+        : totalDopamineSurges;
       updateEventsTicker(currentState.environment.recent_events || []);
       updateSocialMatrix(currentState.environment.interaction_pairs || {});
 
@@ -710,9 +713,15 @@
       }
 
       if (vitalStatusBadge) {
-        if (action === 'swinging' || action === 'exercising' || fun > 0.7) {
+        if (action === 'feeding') {
+          vitalStatusBadge.textContent = 'Feeding (Happy)';
+          vitalStatusBadge.className = 'vitals-status-badge status-feeding';
+        } else if (action === 'swinging' || action === 'exercising' || fun > 0.7) {
           vitalStatusBadge.textContent = action === 'swinging' ? 'Swinging' : action === 'exercising' ? 'Exercising' : 'Playful';
           vitalStatusBadge.className = 'vitals-status-badge status-playful';
+        } else if (mood > 0.75 && satiety > 0.50) {
+          vitalStatusBadge.textContent = mood > 0.88 ? 'Euphoric' : 'Content';
+          vitalStatusBadge.className = 'vitals-status-badge status-happy';
         } else if (mood < 0.28 || action === 'lunging') {
           vitalStatusBadge.textContent = 'Enraged';
           vitalStatusBadge.className = 'vitals-status-badge status-warning';

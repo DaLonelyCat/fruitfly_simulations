@@ -734,9 +734,16 @@ body {
   font-weight: 700;
   padding: 2px 8px;
   border-radius: var(--radius-xs);
+  background-color: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+}
+
+.vitals-status-badge.status-happy,
+.vitals-status-badge.status-feeding {
   background-color: var(--accent-emerald-bg);
   color: var(--accent-emerald);
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-color: rgba(16, 185, 129, 0.45);
 }
 
 .vitals-status-badge.status-warning {

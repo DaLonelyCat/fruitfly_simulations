@@ -47,7 +47,6 @@ class Arena3DView {
     this.flyMeshes = {};
     this.foodMeshes = {};
     this.dopamineParticles = [];
-    this.combatSparkParticles = [];
     this.foodCrumbleParticles = [];
     this.envData = null;
     this.showHitboxes = true;
@@ -760,17 +759,6 @@ class Arena3DView {
 
     if (state.environment) {
       this.envData = state.environment;
-      // Trigger combat sparks on aggression events
-      if (state.environment.recent_events) {
-        state.environment.recent_events.forEach(ev => {
-          if (ev.type === 'aggression') {
-            const aggrObj = this.flyMeshes[ev.aggressor_id];
-            if (aggrObj && Math.random() < 0.4) {
-              this.emitCombatSparks(aggrObj.root.position.x, aggrObj.root.position.y, aggrObj.root.position.z + 1.2);
-            }
-          }
-        });
-      }
     }
 
     if (state.selected_fly_id) {
@@ -1016,13 +1004,9 @@ class Arena3DView {
       // Selection Ring
       flyObj.selectionRing.visible = (fly.id === selectedId);
 
-      // Hitbox visibility & action highlight
+      // Hitbox visibility
       flyObj.hitboxMesh.visible = this.showHitboxes;
-      if (fly.action === 'lunging') {
-        flyObj.hitboxMesh.material.color.setHex(0xff5500);
-      } else {
-        flyObj.hitboxMesh.material.color.setHex(0x00d2ff);
-      }
+      flyObj.hitboxMesh.material.color.setHex(0x00d2ff);
 
       // Dopamine surge particles
       if (fly.dopamine_surge) {
@@ -1264,23 +1248,6 @@ class Arena3DView {
     }
   }
 
-  emitCombatSparks(x, y, z) {
-    for (let i = 0; i < 7; i++) {
-      const pGeom = new THREE.SphereGeometry(0.35, 6, 6);
-      const pMat = new THREE.MeshBasicMaterial({ color: 0xff3300 });
-      const p = new THREE.Mesh(pGeom, pMat);
-      p.position.set(x + (Math.random() - 0.5) * 1.5, y + (Math.random() - 0.5) * 1.5, z);
-      this.scene.add(p);
-      this.combatSparkParticles.push({
-        mesh: p,
-        vx: (Math.random() - 0.5) * 24.0,
-        vy: (Math.random() - 0.5) * 24.0,
-        vz: Math.random() * 20.0 + 4.0,
-        life: 18
-      });
-    }
-  }
-
   emitFoodCrumble(x, y, z) {
     const colors = [0xca8a04, 0x713f12, 0xfef08a];
     for (let i = 0; i < 14; i++) {
@@ -1483,23 +1450,6 @@ class Arena3DView {
       }
     }
     this.dopamineParticles = aliveParticles;
-
-    // 6. Combat Spark Particles
-    const aliveCombat = [];
-    for (const p of this.combatSparkParticles) {
-      p.life -= 1;
-      p.mesh.position.z += p.vz * dt;
-      p.mesh.position.x += p.vx * dt;
-      p.mesh.position.y += p.vy * dt;
-      p.vz -= 35.0 * dt;
-      p.mesh.material.opacity = p.life / 18.0;
-      if (p.life > 0) {
-        aliveCombat.push(p);
-      } else {
-        this.scene.remove(p.mesh);
-      }
-    }
-    this.combatSparkParticles = aliveCombat;
 
     // 7. Food Crumble Particles
     const aliveCrumble = [];

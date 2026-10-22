@@ -715,7 +715,7 @@
           vitalStatusBadge.className = 'vitals-status-badge status-playful';
         } else if (mood < 0.28 || action === 'lunging') {
           vitalStatusBadge.textContent = 'Enraged';
-          vitalStatusBadge.className = 'vitals-status-badge status-danger';
+          vitalStatusBadge.className = 'vitals-status-badge status-warning';
         } else if (mood < 0.5 || satiety < 0.25) {
           vitalStatusBadge.textContent = satiety < 0.25 ? 'Foraging' : 'Restless';
           vitalStatusBadge.className = 'vitals-status-badge status-warning';

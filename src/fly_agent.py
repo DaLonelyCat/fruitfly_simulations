@@ -200,7 +200,8 @@ class FruitFlyAgent:
                 rel_vx = other.vx - self.vx
                 rel_vy = other.vy - self.vy
                 rel_vz = other.vz - self.vz
-                loom_speed = - (rel_vx * (dx / dist) + rel_vy * (dy / dist) + rel_vz * (dz / dist))
+                dist_safe = max(0.001, dist)
+                loom_speed = - (rel_vx * (dx / dist_safe) + rel_vy * (dy / dist_safe) + rel_vz * (dz / dist_safe))
                 
         # 2. 3D Olfactory: Food Odors & cVA Pheromone
         food_odor = env.get_food_odor_3d(self.x, self.y, self.z)

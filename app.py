@@ -198,7 +198,8 @@ async def simulation_loop():
         except asyncio.CancelledError:
             break
         except Exception as e:
-            print(f"[Simulation Loop Recovery] {e}")
+            import traceback
+            traceback.print_exc()
             await asyncio.sleep(0.05)
 
 # Mount root static files for relative asset loading

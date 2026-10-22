@@ -1159,7 +1159,7 @@ class Arena3DView {
 
   render() {
     const now = performance.now();
-    const dt = Math.min(0.05, (now - this.lastFrameTime) * 0.001);
+    const dt = Math.max(0.001, Math.min(0.05, (now - (this.lastFrameTime || now)) * 0.001));
     this.lastFrameTime = now;
 
     // 1. Smooth Fly Movement & Organic Gait at Native Screen Refresh Rate (60Hz / 144Hz)
@@ -1168,11 +1168,15 @@ class Arena3DView {
       const flyObj = this.flyMeshes[id];
       const fly = flyObj.flyData;
 
-      if (flyObj.targetX !== undefined) {
-        const posAlpha = Math.min(1.0, 18.0 * dt);
-        flyObj.root.position.x += (flyObj.targetX - flyObj.root.position.x) * posAlpha;
-        flyObj.root.position.y += (flyObj.targetY - flyObj.root.position.y) * posAlpha;
-        flyObj.root.position.z += (flyObj.targetZ - flyObj.root.position.z) * posAlpha;
+      if (flyObj.targetX !== undefined && isFinite(flyObj.targetX)) {
+        if (!isFinite(flyObj.root.position.x) || !isFinite(flyObj.root.position.y) || !isFinite(flyObj.root.position.z)) {
+          flyObj.root.position.set(flyObj.targetX, flyObj.targetY, flyObj.targetZ);
+        } else {
+          const posAlpha = Math.min(1.0, 18.0 * dt);
+          flyObj.root.position.x += (flyObj.targetX - flyObj.root.position.x) * posAlpha;
+          flyObj.root.position.y += (flyObj.targetY - flyObj.root.position.y) * posAlpha;
+          flyObj.root.position.z += (flyObj.targetZ - flyObj.root.position.z) * posAlpha;
+        }
 
         let diffHeading = flyObj.targetHeading - flyObj.root.rotation.z;
         while (diffHeading > Math.PI) diffHeading -= Math.PI * 2;

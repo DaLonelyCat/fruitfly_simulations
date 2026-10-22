@@ -101,12 +101,21 @@
     const saved = localStorage.getItem('drosophila_backend_url');
     if (saved) {
       const clean = saved.replace(/\/+$/, '');
-      const wsProto = clean.startsWith('https') ? 'wss:' : 'ws:';
-      const wsHost = clean.replace(/^https?:\/\//, '');
-      return {
-        httpBase: clean,
-        wsUrl: `${wsProto}//${wsHost}/ws`
-      };
+      const isMixedContent = window.location.protocol === 'https:' && clean.startsWith('http:');
+      const isLocalhostEnv = Boolean(
+        window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1' ||
+        window.location.hostname === '[::1]'
+      );
+      const isInvalidLocalOnRemote = !isLocalhostEnv && (clean.includes('localhost') || clean.includes('127.0.0.1'));
+      if (!isMixedContent && !isInvalidLocalOnRemote) {
+        const wsProto = clean.startsWith('https') ? 'wss:' : 'ws:';
+        const wsHost = clean.replace(/^https?:\/\//, '');
+        return {
+          httpBase: clean,
+          wsUrl: `${wsProto}//${wsHost}/ws`
+        };
+      }
     }
 
     // 3. If running locally on localhost / 127.0.0.1, use local same-origin server
@@ -162,6 +171,18 @@
 
     initWedgeBars();
     setupEvents();
+
+    // 4. Fetch initial state snapshot immediately so flies and vivarium appear without waiting
+    try {
+      const stateRes = await fetch(`${backendConfig.httpBase}/api/state`);
+      if (stateRes.ok) {
+        currentState = await stateRes.json();
+        updateUI();
+      }
+    } catch (err) {
+      console.warn('Initial state fetch notice:', err);
+    }
+
     connectWebSocket();
     requestAnimationFrame(renderLoop);
   }
@@ -219,6 +240,9 @@
     }
   }
 
+  let lastStatePacketTime = Date.now();
+  let isFallbackPolling = false;
+
   // WebSocket Connection
   function connectWebSocket() {
     const config = getBackendConfig();
@@ -232,9 +256,11 @@
 
     ws.onopen = () => {
       console.log('Connectome 3D WebSocket connected to:', config.wsUrl);
+      lastStatePacketTime = Date.now();
     };
 
     ws.onmessage = (event) => {
+      lastStatePacketTime = Date.now();
       currentState = JSON.parse(event.data);
       updateUI();
     };
@@ -248,6 +274,25 @@
       console.error('WebSocket error:', err);
     };
   }
+
+  // Automatic REST polling watchdog: if WebSocket goes quiet for > 2.0s, poll /api/state
+  setInterval(async () => {
+    if (Date.now() - lastStatePacketTime > 2000 && !isFallbackPolling) {
+      isFallbackPolling = true;
+      try {
+        const config = getBackendConfig();
+        const res = await fetch(`${config.httpBase}/api/state`);
+        if (res.ok) {
+          currentState = await res.json();
+          updateUI();
+        }
+      } catch (err) {
+        // silent
+      } finally {
+        isFallbackPolling = false;
+      }
+    }
+  }, 1200);
 
   function sendCommand(cmd) {
     if (ws && ws.readyState === WebSocket.OPEN) {

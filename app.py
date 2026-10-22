@@ -59,10 +59,29 @@ async def get_state_snapshot():
 # Connected WebSocket clients
 connected_clients = set()
 
+async def broadcast_state(state_json: str):
+    """Safely broadcasts simulation state to all connected clients without blocking physics."""
+    if not connected_clients:
+        return
+    dead = []
+    for ws in list(connected_clients):
+        try:
+            await asyncio.wait_for(ws.send_text(state_json), timeout=0.15)
+        except Exception:
+            dead.append(ws)
+    for ws in dead:
+        connected_clients.discard(ws)
+
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     connected_clients.add(websocket)
+    try:
+        # Send instant state snapshot upon connection so flies appear immediately
+        snapshot = sim.get_state()
+        await websocket.send_text(json.dumps(snapshot))
+    except Exception:
+        pass
     try:
         while True:
             # Receive client command
@@ -160,29 +179,27 @@ async def simulation_loop():
     """Background task running simulation physics and broadcasting updates at ~30 FPS."""
     frame_interval = 1.0 / 30.0  # 30 updates per second over network
     while True:
-        t0 = asyncio.get_event_loop().time()
-        
-        # Step simulation (2 physics sub-steps for smooth 60Hz dynamics)
-        sim.step(dt_sec=0.016)
-        sim.step(dt_sec=0.016)
-        
-        # Broadcast state to all connected clients
-        if connected_clients:
-            state = sim.get_state()
-            state_json = json.dumps(state)
-            # Create tasks for all connected clients
-            dead_clients = []
-            for ws in connected_clients:
-                try:
-                    await ws.send_text(state_json)
-                except Exception:
-                    dead_clients.append(ws)
-            for ws in dead_clients:
-                connected_clients.discard(ws)
-                
-        elapsed = asyncio.get_event_loop().time() - t0
-        sleep_time = max(0.005, frame_interval - elapsed)
-        await asyncio.sleep(sleep_time)
+        try:
+            t0 = asyncio.get_event_loop().time()
+            
+            # Step simulation (2 physics sub-steps for smooth 60Hz dynamics)
+            sim.step(dt_sec=0.016)
+            sim.step(dt_sec=0.016)
+            
+            # Broadcast state to all connected clients safely
+            if connected_clients:
+                state = sim.get_state()
+                state_json = json.dumps(state)
+                await broadcast_state(state_json)
+                    
+            elapsed = asyncio.get_event_loop().time() - t0
+            sleep_time = max(0.005, frame_interval - elapsed)
+            await asyncio.sleep(sleep_time)
+        except asyncio.CancelledError:
+            break
+        except Exception as e:
+            print(f"[Simulation Loop Recovery] {e}")
+            await asyncio.sleep(0.05)
 
 # Mount root static files for relative asset loading
 app.mount("/", StaticFiles(directory=str(web_dir), html=True), name="root_web")

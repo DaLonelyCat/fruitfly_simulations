@@ -49,6 +49,17 @@ class Arena3DView {
     this.dopamineParticles = [];
     this.showHitboxes = true;
 
+    // Smooth Follow Camera State
+    this.smoothCamPos = new THREE.Vector3(100, -140, 160);
+    this.smoothLookAt = new THREE.Vector3(100, 100, 25);
+    this.smoothFollowHeading = 0.0;
+    this.followCamInitialized = false;
+
+    // Object and food wireframe hitboxes group
+    this.objectHitboxesGroup = new THREE.Group();
+    this.objectHitboxesGroup.visible = this.showHitboxes;
+    this.scene.add(this.objectHitboxesGroup);
+
     // Camera Modes: 'orbit', 'follow', 'wasd'
     this.cameraMode = 'orbit';
     this.selectedFlyId = 1;
@@ -136,6 +147,7 @@ class Arena3DView {
 
   setCameraMode(mode) {
     this.cameraMode = mode;
+    this.followCamInitialized = false;
     if (this.controls) {
       this.controls.enabled = (mode === 'orbit');
     }
@@ -412,6 +424,42 @@ class Arena3DView {
       vivariumGroup.add(leaf);
     });
 
+    // 6. 3D Object Hitbox Wireframes
+    const objHbMat = new THREE.MeshBasicMaterial({
+      color: 0x38bdf8,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.45
+    });
+
+    // Feeding Rock Hitbox Cylinder
+    const rockHbGeom = new THREE.CylinderGeometry(15.5, 15.5, 22, 16);
+    const rockHb = new THREE.Mesh(rockHbGeom, objHbMat);
+    rockHb.position.set(150, 60, 11);
+    rockHb.rotation.x = Math.PI / 2;
+    this.objectHitboxesGroup.add(rockHb);
+
+    // Climbing Trunk Hitbox Capsule
+    const trunkHbGeom = new THREE.TubeGeometry(trunkCurve, 16, 4.5, 8, false);
+    const trunkHb = new THREE.Mesh(trunkHbGeom, objHbMat);
+    this.objectHitboxesGroup.add(trunkHb);
+
+    // Lateral Branch Hitbox
+    const branchHbGeom = new THREE.TubeGeometry(branchCurve, 12, 2.5, 8, false);
+    const branchHb = new THREE.Mesh(branchHbGeom, objHbMat);
+    this.objectHitboxesGroup.add(branchHb);
+
+    // Non-clipping Ground Boundary Plane
+    const floorHbGeom = new THREE.PlaneGeometry(200, 200);
+    const floorHb = new THREE.Mesh(floorHbGeom, new THREE.MeshBasicMaterial({
+      color: 0x10b981,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.2
+    }));
+    floorHb.position.set(100, 100, 1.6);
+    this.objectHitboxesGroup.add(floorHb);
+
     this.scene.add(vivariumGroup);
   }
 
@@ -518,9 +566,17 @@ class Arena3DView {
 
   toggleHitboxes(show) {
     this.showHitboxes = show;
+    if (this.objectHitboxesGroup) {
+      this.objectHitboxesGroup.visible = show;
+    }
     for (const id in this.flyMeshes) {
       if (this.flyMeshes[id].hitboxMesh) {
         this.flyMeshes[id].hitboxMesh.visible = show;
+      }
+    }
+    for (const id in this.foodMeshes) {
+      if (this.foodMeshes[id].userData.hitboxMesh) {
+        this.foodMeshes[id].userData.hitboxMesh.visible = show;
       }
     }
   }
@@ -551,9 +607,14 @@ class Arena3DView {
         meshGroup = this.createModelledFruit(fp);
         this.scene.add(meshGroup);
         this.foodMeshes[fp.id] = meshGroup;
+        meshGroup.position.set(fp.x, fp.y, fp.z);
+        meshGroup.userData.targetZ = fp.z;
       }
 
-      meshGroup.position.set(fp.x, fp.y, fp.z);
+      meshGroup.userData.targetZ = fp.z;
+      meshGroup.position.x = fp.x;
+      meshGroup.position.y = fp.y;
+
       const scale = Math.max(0.25, fp.amount / 100.0);
       meshGroup.scale.set(scale, scale, scale);
     });
@@ -711,6 +772,21 @@ class Arena3DView {
       group.add(seeds);
     }
 
+    // Hitbox wireframe for food patch
+    const hitGeom = new THREE.CylinderGeometry(fp.radius, fp.radius, fp.height, 16);
+    const hitMat = new THREE.MeshBasicMaterial({
+      color: 0x22c55e,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.55
+    });
+    const foodHitbox = new THREE.Mesh(hitGeom, hitMat);
+    foodHitbox.rotation.x = Math.PI / 2;
+    foodHitbox.position.set(0, 0, fp.height * 0.5);
+    foodHitbox.visible = this.showHitboxes;
+    group.add(foodHitbox);
+    group.userData.hitboxMesh = foodHitbox;
+
     return group;
   }
 
@@ -727,11 +803,23 @@ class Arena3DView {
         this.flyMeshes[fly.id] = flyObj;
       }
 
-      // Update 3D position & smooth orientation
-      flyObj.root.position.set(fly.x, fly.y, fly.z);
-      flyObj.root.rotation.z = fly.heading;
-      flyObj.root.rotation.y = -(fly.pitch || 0);
-      flyObj.root.rotation.x = (fly.roll || 0);
+      // Store target coordinates for 60Hz/144Hz continuous interpolation
+      flyObj.targetX = fly.x;
+      flyObj.targetY = fly.y;
+      flyObj.targetZ = fly.z;
+      flyObj.targetHeading = fly.heading;
+      flyObj.targetPitch = fly.pitch || 0;
+      flyObj.targetRoll = fly.roll || 0;
+      flyObj.flyData = fly;
+
+      // Immediate snap on first frame spawn
+      if (!flyObj.initialized) {
+        flyObj.root.position.set(fly.x, fly.y, fly.z);
+        flyObj.root.rotation.z = fly.heading;
+        flyObj.root.rotation.y = -(fly.pitch || 0);
+        flyObj.root.rotation.x = (fly.roll || 0);
+        flyObj.initialized = true;
+      }
 
       // Selection Ring
       flyObj.selectionRing.visible = (fly.id === selectedId);
@@ -742,35 +830,6 @@ class Arena3DView {
         flyObj.hitboxMesh.material.color.setHex(0xff5500);
       } else {
         flyObj.hitboxMesh.material.color.setHex(0x00d2ff);
-      }
-
-      // Wings & Halteres
-      const t = performance.now() * 0.001;
-      if (fly.is_airborne || fly.action === 'flying' || fly.action === 'takeoff') {
-        const wingFlap = Math.sin(t * 70.0) * 0.65;
-        flyObj.wingLeft.rotation.y = wingFlap;
-        flyObj.wingRight.rotation.y = -wingFlap;
-        if (flyObj.haltereL) flyObj.haltereL.rotation.z = -wingFlap * 0.8;
-        if (flyObj.haltereR) flyObj.haltereR.rotation.z = wingFlap * 0.8;
-      } else if (fly.action === 'courting') {
-        const degToRad = Math.PI / 180;
-        flyObj.wingLeft.rotation.z = (fly.wing_left_angle || 12) * degToRad;
-        flyObj.wingRight.rotation.z = -(fly.wing_right_angle || 12) * degToRad;
-      } else {
-        flyObj.wingLeft.rotation.set(0, 0, 12 * Math.PI / 180);
-        flyObj.wingRight.rotation.set(0, 0, -12 * Math.PI / 180);
-        if (flyObj.haltereL) flyObj.haltereL.rotation.set(0, 0, 0);
-        if (flyObj.haltereR) flyObj.haltereR.rotation.set(0, 0, 0);
-      }
-
-      // Legs walking tripod gait
-      if (fly.is_walking) {
-        const walkPhase = t * 18.0;
-        flyObj.legs.forEach((legGroup, idx) => {
-          const side = (idx % 2 === 0) ? 1 : -1;
-          const tripodPhase = (idx % 2 === 0) ? walkPhase : walkPhase + Math.PI;
-          legGroup.rotation.y = Math.sin(tripodPhase) * 0.28 * side;
-        });
       }
 
       // Dopamine surge particles
@@ -1020,24 +1079,56 @@ class Arena3DView {
         const flyPos = selFlyObj.root.position;
         const flyHeading = selFlyObj.root.rotation.z;
 
-        // Chase camera 22mm behind and 10mm above the fly
+        // Chase camera 24mm behind and 11mm above the fly
         const distBehind = 24.0;
         const heightAbove = 11.0;
 
-        const targetCamPos = new THREE.Vector3(
-          flyPos.x - Math.cos(flyHeading) * distBehind,
-          flyPos.y - Math.sin(flyHeading) * distBehind,
+        if (!this.followCamInitialized) {
+          this.smoothFollowHeading = flyHeading;
+          this.smoothCamPos.set(
+            flyPos.x - Math.cos(flyHeading) * distBehind,
+            flyPos.y - Math.sin(flyHeading) * distBehind,
+            flyPos.z + heightAbove
+          );
+          this.smoothLookAt.set(
+            flyPos.x + Math.cos(flyHeading) * 8.0,
+            flyPos.y + Math.sin(flyHeading) * 8.0,
+            flyPos.z + 1.8
+          );
+          this.camera.position.copy(this.smoothCamPos);
+          this.camera.lookAt(this.smoothLookAt);
+          this.followCamInitialized = true;
+        }
+
+        // Shortest-arc smooth heading tracking
+        let diffHeading = flyHeading - this.smoothFollowHeading;
+        while (diffHeading > Math.PI) diffHeading -= Math.PI * 2;
+        while (diffHeading < -Math.PI) diffHeading += Math.PI * 2;
+
+        const headingRate = Math.min(1.0, 5.0 * dt);
+        this.smoothFollowHeading += diffHeading * headingRate;
+
+        // Desired camera position using smoothed heading
+        const desiredCamPos = new THREE.Vector3(
+          flyPos.x - Math.cos(this.smoothFollowHeading) * distBehind,
+          flyPos.y - Math.sin(this.smoothFollowHeading) * distBehind,
           flyPos.z + heightAbove
         );
 
-        this.camera.position.lerp(targetCamPos, 0.08);
+        // Position spring dampening
+        const posRate = Math.min(1.0, 6.0 * dt);
+        this.smoothCamPos.lerp(desiredCamPos, posRate);
+        this.camera.position.copy(this.smoothCamPos);
 
-        const lookTarget = new THREE.Vector3(
-          flyPos.x + Math.cos(flyHeading) * 8.0,
-          flyPos.y + Math.sin(flyHeading) * 8.0,
-          flyPos.z + 2.0
+        // Smooth look-at tracking
+        const desiredLookAt = new THREE.Vector3(
+          flyPos.x + Math.cos(this.smoothFollowHeading) * 8.0,
+          flyPos.y + Math.sin(this.smoothFollowHeading) * 8.0,
+          flyPos.z + 1.8
         );
-        this.camera.lookAt(lookTarget);
+        const lookRate = Math.min(1.0, 10.0 * dt);
+        this.smoothLookAt.lerp(desiredLookAt, lookRate);
+        this.camera.lookAt(this.smoothLookAt);
       }
     } else if (this.cameraMode === 'wasd') {
       const speed = (this.keysDown['ShiftLeft'] || this.keysDown['ShiftRight'] ? 65.0 : 35.0) * dt;
@@ -1071,8 +1162,71 @@ class Arena3DView {
     const dt = Math.min(0.05, (now - this.lastFrameTime) * 0.001);
     this.lastFrameTime = now;
 
+    // 1. Smooth Fly Movement & Organic Gait at Native Screen Refresh Rate (60Hz / 144Hz)
+    const t = now * 0.001;
+    for (const id in this.flyMeshes) {
+      const flyObj = this.flyMeshes[id];
+      const fly = flyObj.flyData;
+
+      if (flyObj.targetX !== undefined) {
+        const posAlpha = Math.min(1.0, 18.0 * dt);
+        flyObj.root.position.x += (flyObj.targetX - flyObj.root.position.x) * posAlpha;
+        flyObj.root.position.y += (flyObj.targetY - flyObj.root.position.y) * posAlpha;
+        flyObj.root.position.z += (flyObj.targetZ - flyObj.root.position.z) * posAlpha;
+
+        let diffHeading = flyObj.targetHeading - flyObj.root.rotation.z;
+        while (diffHeading > Math.PI) diffHeading -= Math.PI * 2;
+        while (diffHeading < -Math.PI) diffHeading += Math.PI * 2;
+        const rotAlpha = Math.min(1.0, 16.0 * dt);
+        flyObj.root.rotation.z += diffHeading * rotAlpha;
+        flyObj.root.rotation.y += (-flyObj.targetPitch - flyObj.root.rotation.y) * rotAlpha;
+        flyObj.root.rotation.x += (flyObj.targetRoll - flyObj.root.rotation.x) * rotAlpha;
+      }
+
+      if (fly) {
+        // Wings & Halteres
+        if (fly.is_airborne || fly.action === 'flying' || fly.action === 'takeoff') {
+          const wingFlap = Math.sin(t * 70.0) * 0.65;
+          flyObj.wingLeft.rotation.y = wingFlap;
+          flyObj.wingRight.rotation.y = -wingFlap;
+          if (flyObj.haltereL) flyObj.haltereL.rotation.z = -wingFlap * 0.8;
+          if (flyObj.haltereR) flyObj.haltereR.rotation.z = wingFlap * 0.8;
+        } else if (fly.action === 'courting') {
+          const degToRad = Math.PI / 180;
+          flyObj.wingLeft.rotation.z = (fly.wing_left_angle || 12) * degToRad;
+          flyObj.wingRight.rotation.z = -(fly.wing_right_angle || 12) * degToRad;
+        } else {
+          flyObj.wingLeft.rotation.set(0, 0, 12 * Math.PI / 180);
+          flyObj.wingRight.rotation.set(0, 0, -12 * Math.PI / 180);
+          if (flyObj.haltereL) flyObj.haltereL.rotation.set(0, 0, 0);
+          if (flyObj.haltereR) flyObj.haltereR.rotation.set(0, 0, 0);
+        }
+
+        // Legs walking tripod gait
+        if (fly.is_walking) {
+          const walkPhase = t * 18.0;
+          flyObj.legs.forEach((legGroup, idx) => {
+            const side = (idx % 2 === 0) ? 1 : -1;
+            const tripodPhase = (idx % 2 === 0) ? walkPhase : walkPhase + Math.PI;
+            legGroup.rotation.y = Math.sin(tripodPhase) * 0.28 * side;
+          });
+        }
+      }
+    }
+
+    // 2. Smooth Food Dropping & Settling Animation
+    for (const id in this.foodMeshes) {
+      const fg = this.foodMeshes[id];
+      if (fg.userData.targetZ !== undefined) {
+        const foodFallRate = Math.min(1.0, 16.0 * dt);
+        fg.position.z += (fg.userData.targetZ - fg.position.z) * foodFallRate;
+      }
+    }
+
+    // 3. Camera Update
     this.updateCamera(dt);
 
+    // 4. Dopamine Particles
     const aliveParticles = [];
     for (const p of this.dopamineParticles) {
       p.life -= 1;

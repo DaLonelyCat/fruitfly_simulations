@@ -55,6 +55,7 @@ class SimulationEnvironment:
             {
                 "id": 1,
                 "x": 60.0, "y": 60.0, "z": 0.0,
+                "vz": 0.0, "settled": True,
                 "radius": 12.0, "height": 3.5,
                 "amount": 100.0,
                 "sugar_quality": 1.0,
@@ -64,6 +65,7 @@ class SimulationEnvironment:
             {
                 "id": 2,
                 "x": 150.0, "y": 60.0, "z": 22.0,  # on the elevated platform
+                "vz": 0.0, "settled": True,
                 "radius": 13.0, "height": 7.0,
                 "amount": 110.0,
                 "sugar_quality": 1.25,  # rich fermenting fig with seeds
@@ -73,6 +75,7 @@ class SimulationEnvironment:
             {
                 "id": 3,
                 "x": 140.0, "y": 150.0, "z": 0.0,
+                "vz": 0.0, "settled": True,
                 "radius": 10.0, "height": 6.0,
                 "amount": 95.0,
                 "sugar_quality": 1.15,
@@ -82,6 +85,7 @@ class SimulationEnvironment:
             {
                 "id": 4,
                 "x": 50.0, "y": 150.0, "z": 0.0,
+                "vz": 0.0, "settled": True,
                 "radius": 8.0, "height": 8.0,
                 "amount": 90.0,
                 "sugar_quality": 1.3,
@@ -103,7 +107,7 @@ class SimulationEnvironment:
         self.fight_events = []
         self.interaction_matrix = {}
 
-    def add_food_patch_3d(self, x, y, z=0.0, food_type="banana_slice", amount=90.0):
+    def add_food_patch_3d(self, x, y, z=None, food_type="banana_slice", amount=90.0):
         new_id = max([fp["id"] for fp in self.food_patches], default=0) + 1
         if food_type == "sugar_cube":
             sugar_val, h, r, label = 1.3, 8.0, 8.0, "Crystalline Sugar Cube"
@@ -116,11 +120,14 @@ class SimulationEnvironment:
         else: # banana_slice
             sugar_val, h, r, label = 1.0, 3.5, 12.0, "Ripe Banana Slice"
 
+        drop_z = float(z) if (z is not None and float(z) > 10.0) else 65.0
         self.food_patches.append({
             "id": new_id,
             "x": float(x),
             "y": float(y),
-            "z": float(z),
+            "z": drop_z,
+            "vz": 0.0,
+            "settled": False,
             "radius": r,
             "height": h,
             "amount": float(amount),
@@ -229,13 +236,25 @@ class SimulationEnvironment:
 
     def resolve_hitbox_collisions(self, flies):
         """
-        Calculates physical 3D hitbox collisions between flies and obstacles.
-        Hitbox: 3D bounding capsule with radius ~1.8mm.
+        Calculates physical 3D hitbox collisions between flies, obstacles, ground, and food.
+        Hitbox: 3D bounding volume with radius ~1.8mm.
+        Enforces strict non-clipping ground clearance (Z >= 1.6mm) and obstacle perching.
         """
         hitbox_r = 1.8
         min_sep = hitbox_r * 2.0
+        ground_z = 1.6  # baseline where fly tarsi/feet make contact with ground at Z=0
 
-        # Fly-Fly Collisions
+        # 1. Fly-to-Ground Anti-Clipping
+        for f in flies:
+            if f.z < ground_z:
+                f.z = ground_z
+                if f.vz < 0.0:
+                    f.vz = 0.0
+                if not f.is_airborne:
+                    f.pitch = 0.0
+                    f.roll = 0.0
+
+        # 2. Fly-Fly Collisions (Repulsion + Elastic Impulse)
         for i in range(len(flies)):
             f1 = flies[i]
             for j in range(i + 1, len(flies)):
@@ -245,7 +264,6 @@ class SimulationEnvironment:
                 dz = f2.z - f1.z
                 dist = math.sqrt(dx*dx + dy*dy + dz*dz)
                 if dist < min_sep and dist > 0.001:
-                    # Overlap detected: displace each fly along collision normal
                     overlap = min_sep - dist
                     nx, ny, nz = dx / dist, dy / dist, dz / dist
                     half_overlap = overlap * 0.5
@@ -269,18 +287,45 @@ class SimulationEnvironment:
                         f2.vy += dot * ny * 0.5
                         f2.vz += dot * nz * 0.5
 
-        # Fly-Perch Cylinder Collisions
-        perch = self.objects[0] # central climbing branch
-        px, py = perch["x"], perch["y"]
-        pr = perch["radius"]
-        ph = perch["height"]
+        # 3. Feeding Rock Collision (Pedestal: x=150, y=60, radius=15.5, height=22.0)
+        rock = self.objects[2]
+        rx, ry, rr, rh = rock["x"], rock["y"], rock["radius"], rock["height"]
+        rock_top_z = rh + ground_z
 
+        for f in flies:
+            dx = f.x - rx
+            dy = f.y - ry
+            dist_xy = math.hypot(dx, dy)
+            if dist_xy < (rr + hitbox_r):
+                if f.z >= (rh - 1.2):
+                    # Fly is standing/landing on top of the rock
+                    if f.z < rock_top_z:
+                        f.z = rock_top_z
+                        if f.vz < 0.0:
+                            f.vz = 0.0
+                        if not f.is_airborne:
+                            f.pitch = 0.0
+                            f.roll = 0.0
+                else:
+                    # Fly is walking into the rock from the side: push outward horizontally
+                    if dist_xy > 0.001:
+                        nx = dx / dist_xy
+                        ny = dy / dist_xy
+                        f.x = rx + nx * (rr + hitbox_r)
+                        f.y = ry + ny * (rr + hitbox_r)
+                        dot = f.vx * nx + f.vy * ny
+                        if dot < 0.0:
+                            f.vx -= dot * nx
+                            f.vy -= dot * ny
+
+        # 4. Climbing Perch Cylinder Collisions
+        perch = self.objects[0]
+        px, py, pr, ph = perch["x"], perch["y"], perch["radius"], perch["height"]
         for f in flies:
             dx = f.x - px
             dy = f.y - py
             dist_xy = math.hypot(dx, dy)
             if dist_xy < (pr + hitbox_r) and 0 <= f.z <= (ph + hitbox_r):
-                # Repel outwards horizontally or land on perch
                 if dist_xy > 0.001:
                     norm_x = dx / dist_xy
                     norm_y = dy / dist_xy
@@ -288,6 +333,46 @@ class SimulationEnvironment:
                     f.y = py + norm_y * (pr + hitbox_r)
                     f.vx = 0.0
                     f.vy = 0.0
+
+        # 5. Food Patch Hitbox Collisions (Prevent sinking into food, allow perching on top)
+        for fp in self.food_patches:
+            if fp["amount"] <= 0:
+                continue
+            fx, fy, fz, fr, fh = fp["x"], fp["y"], fp["z"], fp["radius"], fp["height"]
+            food_top_z = fz + fh + ground_z
+
+            for f in flies:
+                dx = f.x - fx
+                dy = f.y - fy
+                dist_xy = math.hypot(dx, dy)
+                if dist_xy < (fr + hitbox_r):
+                    if f.z >= (fz + fh - 1.2):
+                        # Fly perches on top of the food item
+                        if f.z < food_top_z:
+                            f.z = food_top_z
+                            if f.vz < 0.0:
+                                f.vz = 0.0
+                    elif f.z < (fz + fh) and f.z >= fz:
+                        # Walking into the food from the side: push outside food radius
+                        if dist_xy > 0.001:
+                            nx = dx / dist_xy
+                            ny = dy / dist_xy
+                            f.x = fx + nx * (fr + hitbox_r)
+                            f.y = fy + ny * (fr + hitbox_r)
+                            dot = f.vx * nx + f.vy * ny
+                            if dot < 0.0:
+                                f.vx -= dot * nx
+                                f.vy -= dot * ny
+
+        # 6. Final Ground Clamp & Bound Enforcement
+        for f in flies:
+            if f.z < ground_z:
+                f.z = ground_z
+                if f.vz < 0.0:
+                    f.vz = 0.0
+                if not f.is_airborne:
+                    f.pitch = 0.0
+                    f.roll = 0.0
 
     def record_courtship(self, suitor, target):
         event = {
@@ -335,7 +420,8 @@ class SimulationEnvironment:
         self.interaction_matrix[pair_key] = self.interaction_matrix.get(pair_key, 0) + 1
 
     def step(self, dt_sec=0.016):
-        """Simulates 3D environmental dynamics."""
+        """Simulates 3D environmental dynamics including food dropping physics."""
+        # 1. Pheromone decay
         alive_p = []
         for p in self.pheromone_traces:
             p["life"] -= 1
@@ -344,6 +430,7 @@ class SimulationEnvironment:
                 alive_p.append(p)
         self.pheromone_traces = alive_p[-120:]
         
+        # 2. Acoustic wave propagation
         alive_w = []
         for w in self.acoustic_waves_3d:
             w["radius"] += 45.0 * dt_sec
@@ -352,6 +439,29 @@ class SimulationEnvironment:
             if w["life"] > 0 and w["radius"] < w["max_radius"]:
                 alive_w.append(w)
         self.acoustic_waves_3d = alive_w
+
+        # 3. Food Dropping Physics (Gravity, Rock landing, and Restitution Bounce)
+        g = 420.0  # gravity in mm/s^2
+        rock = self.objects[2]  # Elevated feeding rock pedestal
+        rx, ry, rr, rh = rock["x"], rock["y"], rock["radius"], rock["height"]
+
+        for fp in self.food_patches:
+            if not fp.get("settled", True):
+                fp["vz"] = fp.get("vz", 0.0) - g * dt_sec
+                fp["z"] += fp["vz"] * dt_sec
+
+                # Check if landing on rock platform vs ground
+                dist_rock = math.hypot(fp["x"] - rx, fp["y"] - ry)
+                target_floor = rh if dist_rock <= (rr + fp["radius"] * 0.4) else 0.0
+
+                if fp["z"] <= target_floor:
+                    fp["z"] = target_floor
+                    if abs(fp.get("vz", 0.0)) > 20.0:
+                        # Elastic restitution bounce
+                        fp["vz"] = -fp["vz"] * 0.22
+                    else:
+                        fp["vz"] = 0.0
+                        fp["settled"] = True
 
     def to_dict(self):
         """Serializes 3D environment for Three.js rendering."""
@@ -364,6 +474,8 @@ class SimulationEnvironment:
                 {
                     "id": fp["id"],
                     "x": round(fp["x"], 1), "y": round(fp["y"], 1), "z": round(fp["z"], 1),
+                    "vz": round(fp.get("vz", 0.0), 1),
+                    "settled": fp.get("settled", True),
                     "radius": fp["radius"], "height": fp["height"],
                     "amount": round(fp["amount"], 1),
                     "type": fp["type"],

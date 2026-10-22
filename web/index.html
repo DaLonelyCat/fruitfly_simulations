@@ -54,13 +54,6 @@
           </svg>
           <span>Fullscreen</span>
         </button>
-
-        <button id="btn-cloud-config" class="btn btn-ghost" title="Cloud Backend Settings (Cloudflare Pages mode)" aria-label="Cloud Backend Settings">
-          <svg class="btn-svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path>
-          </svg>
-          <span id="backend-status-pill">Connected</span>
-        </button>
       </div>
     </header>
 
@@ -359,6 +352,29 @@
       </aside>
     </main>
 
+    <!-- Authoritative Credits Footer -->
+    <footer class="app-footer">
+      <div class="footer-content">
+        <div class="footer-brand">
+          <span class="footer-title">Drosophila Connectome Multi-Agent Simulation</span>
+          <span class="footer-sub">Simulating real-time synaptic dynamics across 166,000 neurons &amp; 125M synapses</span>
+        </div>
+        <div class="footer-credits">
+          <span class="credit-item">
+            Created &amp; Engineered by <a href="https://github.com/DaLonelyCat" target="_blank" rel="noopener noreferrer" class="credit-link">DaLonelyCat</a>
+          </span>
+          <span class="credit-sep">&bull;</span>
+          <span class="credit-item">
+            Connectome Dataset &amp; Reconstruction by <a href="https://research.google/blog/a-connectomics-milestone-mapping-the-complete-male-fruit-fly-brain/" target="_blank" rel="noopener noreferrer" class="credit-link">Google DeepMind</a> &amp; <a href="https://male-cns.janelia.org/" target="_blank" rel="noopener noreferrer" class="credit-link">Janelia Research Campus</a>
+          </span>
+          <span class="credit-sep">&bull;</span>
+          <span class="credit-item">
+            <a href="https://github.com/DaLonelyCat/fruitfly_simulations" target="_blank" rel="noopener noreferrer" class="credit-link">GitHub Repository</a>
+          </span>
+        </div>
+      </div>
+    </footer>
+
     <!-- Modal for Spawning New 3D Fly -->
     <div id="add-fly-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modal-spawn-title">
       <div class="modal-card">
@@ -370,31 +386,6 @@
         <div class="modal-actions">
           <button id="btn-cancel-spawn" class="btn btn-secondary">Cancel</button>
           <button id="btn-confirm-spawn" class="btn btn-primary">Spawn in Vivarium</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Modal for Cloud Backend Configuration (Cloudflare Pages Mode) -->
-    <div id="cloud-config-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modal-cloud-title">
-      <div class="modal-card">
-        <h3 class="modal-heading" id="modal-cloud-title">Cloud Backend Connection</h3>
-        <p class="modal-desc">Configure the simulation backend host. When hosting the frontend on Cloudflare Pages for $0, paste your free Render or Hugging Face backend URL below.</p>
-        
-        <div class="slider-group">
-          <label class="slider-header" for="cloud-backend-input">
-            <span class="slider-name">Backend API / WebSocket Host URL:</span>
-          </label>
-          <input type="text" id="cloud-backend-input" class="select-input" placeholder="e.g. https://drosophila-connectome.onrender.com" style="width:100%;padding:8px 12px;background:var(--bg-surface-elevated);color:var(--text-primary);border:1px solid var(--border-prominent);border-radius:var(--radius-sm);font-family:var(--font-mono);font-size:12px;">
-        </div>
-
-        <div style="font-size:11.5px;color:var(--text-muted);line-height:1.4;">
-          Tip: Leave empty or reset to use the current origin (<code style="color:var(--accent-cyan);">window.location.origin</code>).
-        </div>
-
-        <div class="modal-actions">
-          <button id="btn-reset-backend" class="btn btn-secondary">Reset to Local</button>
-          <button id="btn-close-cloud" class="btn btn-secondary">Cancel</button>
-          <button id="btn-save-backend" class="btn btn-primary">Save &amp; Connect</button>
         </div>
       </div>
     </div>

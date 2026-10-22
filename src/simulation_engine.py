@@ -29,11 +29,11 @@ class FruitFlySimulation:
             r = 50.0
             x = (arena_w / 2.0) + r * math.cos(angle)
             y = (arena_d / 2.0) + r * math.sin(angle)
-            z = 0.0  # start on the ground
+            z = 1.6  # baseline ground clearance
             fly = FruitFlyAgent(fly_id=i + 1, archetype_name=arch, x=x, y=y, z=z, heading=angle + 1.57)
             self.flies.append(fly)
 
-    def add_fly(self, archetype_name="Romeo", x=None, y=None, z=0.0):
+    def add_fly(self, archetype_name="Romeo", x=None, y=None, z=1.6):
         new_id = max([f.id for f in self.flies], default=0) + 1
         if x is None:
             x = random.uniform(30.0, self.arena_w - 30.0)

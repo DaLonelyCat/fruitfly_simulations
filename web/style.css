@@ -234,14 +234,6 @@ body {
   border-color: var(--border-prominent);
 }
 
-#backend-status-pill {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--accent-emerald);
-  transition: color var(--transition-fast);
-}
-
 /* ==========================================================================
    Dual Split-Screen Workspace
    ========================================================================== */
@@ -1162,6 +1154,71 @@ body {
   justify-content: flex-end;
   gap: 10px;
   margin-top: 6px;
+}
+
+/* ==========================================================================
+   Footer & Attribution
+   ========================================================================== */
+
+.app-footer {
+  margin-top: auto;
+  background-color: var(--bg-surface);
+  border-top: 1px solid var(--border-subtle);
+  padding: 14px 24px;
+}
+
+.footer-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.footer-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.footer-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+.footer-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.footer-credits {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 11.5px;
+  color: var(--text-secondary);
+}
+
+.credit-sep {
+  color: var(--border-prominent);
+}
+
+.credit-link {
+  color: var(--accent-cyan);
+  text-decoration: none;
+  font-weight: 600;
+  transition: all var(--transition-fast);
+}
+
+.credit-link:hover {
+  color: #7dd3fc;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 /* Accessibility: prefers-reduced-motion */

@@ -26,13 +26,6 @@
   const btnFlyTakeoff = document.getElementById('btn-fly-takeoff');
   const btnResetCamArena = document.getElementById('btn-reset-cam-arena');
   const btnFullscreen = document.getElementById('btn-fullscreen');
-  const btnCloudConfig = document.getElementById('btn-cloud-config');
-  const cloudConfigModal = document.getElementById('cloud-config-modal');
-  const cloudBackendInput = document.getElementById('cloud-backend-input');
-  const btnCloseCloud = document.getElementById('btn-close-cloud');
-  const btnResetBackend = document.getElementById('btn-reset-backend');
-  const btnSaveBackend = document.getElementById('btn-save-backend');
-  const backendStatusPill = document.getElementById('backend-status-pill');
 
   const camOrbit = document.getElementById('cam-orbit');
   const camFollow = document.getElementById('cam-follow');
@@ -239,10 +232,6 @@
 
     ws.onopen = () => {
       console.log('Connectome 3D WebSocket connected to:', config.wsUrl);
-      if (backendStatusPill) {
-        backendStatusPill.textContent = 'Connected';
-        backendStatusPill.style.color = '#34d399';
-      }
     };
 
     ws.onmessage = (event) => {
@@ -252,19 +241,11 @@
 
     ws.onclose = () => {
       console.log('WebSocket disconnected. Reconnecting in 1.5s...');
-      if (backendStatusPill) {
-        backendStatusPill.textContent = 'Offline';
-        backendStatusPill.style.color = '#f59e0b';
-      }
       setTimeout(connectWebSocket, 1500);
     };
 
     ws.onerror = (err) => {
       console.error('WebSocket error:', err);
-      if (backendStatusPill) {
-        backendStatusPill.textContent = 'Offline';
-        backendStatusPill.style.color = '#f87171';
-      }
     };
   }
 
@@ -306,43 +287,6 @@
       sendCommand({ action: 'add_fly', archetype: selectedSpawnArchetype });
       addFlyModal.classList.add('hidden');
     });
-
-    // Cloud Backend Configuration Modal
-    if (btnCloudConfig && cloudConfigModal) {
-      btnCloudConfig.addEventListener('click', () => {
-        if (cloudBackendInput) {
-          cloudBackendInput.value = localStorage.getItem('drosophila_backend_url') || '';
-        }
-        cloudConfigModal.classList.remove('hidden');
-      });
-    }
-
-    if (btnCloseCloud && cloudConfigModal) {
-      btnCloseCloud.addEventListener('click', () => {
-        cloudConfigModal.classList.add('hidden');
-      });
-    }
-
-    if (btnResetBackend && cloudConfigModal) {
-      btnResetBackend.addEventListener('click', () => {
-        localStorage.removeItem('drosophila_backend_url');
-        cloudConfigModal.classList.add('hidden');
-        window.location.reload();
-      });
-    }
-
-    if (btnSaveBackend && cloudConfigModal) {
-      btnSaveBackend.addEventListener('click', () => {
-        const val = cloudBackendInput ? cloudBackendInput.value.trim() : '';
-        if (val) {
-          localStorage.setItem('drosophila_backend_url', val.replace(/\/+$/, ''));
-        } else {
-          localStorage.removeItem('drosophila_backend_url');
-        }
-        cloudConfigModal.classList.add('hidden');
-        window.location.reload();
-      });
-    }
 
     // Fullscreen Toggle
     function toggleFullscreen() {

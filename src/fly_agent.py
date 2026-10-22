@@ -76,7 +76,7 @@ class FruitFlyAgent:
         # 3D Spatial Position & Kinematics (in mm)
         self.x = float(x)
         self.y = float(y)
-        self.z = float(z)
+        self.z = max(1.6, float(z))
         self.vx = 0.0
         self.vy = 0.0
         self.vz = 0.0
@@ -354,8 +354,11 @@ class FruitFlyAgent:
                     
                 self.heading += self.angular_velocity * dt_sec
                 flight_speed = 32.0 * (0.6 + 0.8 * self.dopamine_level)  # dopamine increases flight vigor
-                self.vx = math.cos(self.heading) * flight_speed
-                self.vy = math.sin(self.heading) * flight_speed
+                target_vx = math.cos(self.heading) * flight_speed
+                target_vy = math.sin(self.heading) * flight_speed
+                accel = min(1.0, 14.0 * dt_sec)
+                self.vx += (target_vx - self.vx) * accel
+                self.vy += (target_vy - self.vy) * accel
                 
                 # Banking roll angle proportional to turn
                 self.roll = np.clip(self.angular_velocity * 0.15, -0.45, 0.45)
@@ -364,15 +367,17 @@ class FruitFlyAgent:
                 # Land if flight timer expires and near ground or perch
                 if self.flight_timer <= 0 and self.z < 6.0:
                     self.is_airborne = False
-                    self.z = 0.0
+                    self.z = 1.6
                     self.vz = 0.0
                     self.roll = 0.0
                     self.pitch = 0.0
             else:
-                # Walking Mode on Ground or Perch
+                # Walking Mode on Ground or Perch (Strict minimum clearance Z >= 1.6mm)
                 self.last_action_tag = "walking"
                 self.roll = 0.0
                 self.pitch = 0.0
+                if self.z < 1.6:
+                    self.z = 1.6
                 self.vz = 0.0
                 
                 # Occasional spontaneous takeoff if dopamine (arousal) is high
@@ -391,8 +396,11 @@ class FruitFlyAgent:
                     
                 self.heading += self.angular_velocity * dt_sec
                 walk_speed = motor_commands["walk"] * 24.0 * (0.7 + 0.6 * self.dopamine_level)
-                self.vx = math.cos(self.heading) * walk_speed
-                self.vy = math.sin(self.heading) * walk_speed
+                target_vx = math.cos(self.heading) * walk_speed
+                target_vy = math.sin(self.heading) * walk_speed
+                accel = min(1.0, 16.0 * dt_sec)
+                self.vx += (target_vx - self.vx) * accel
+                self.vy += (target_vy - self.vy) * accel
                 
                 # Tripod Leg Animation
                 if math.hypot(self.vx, self.vy) > 1.0:
@@ -422,9 +430,9 @@ class FruitFlyAgent:
             self.y = env.depth - margin
             self.heading = -self.heading + random.uniform(-0.2, 0.2)
             
-        # Floor & Ceiling (Z)
-        if self.z < 0.0:
-            self.z = 0.0
+        # Floor & Ceiling (Z): Ground clearance anchored at Z >= 1.6mm
+        if self.z < 1.6:
+            self.z = 1.6
             self.vz = 0.0
             if self.is_airborne and self.flight_timer <= 0:
                 self.is_airborne = False
@@ -449,7 +457,7 @@ class FruitFlyAgent:
             "color": self.color,
             "x": round(self.x, 2),
             "y": round(self.y, 2),
-            "z": round(self.z, 2),
+            "z": round(max(1.6, self.z), 2),
             "vx": round(self.vx, 2),
             "vy": round(self.vy, 2),
             "vz": round(self.vz, 2),

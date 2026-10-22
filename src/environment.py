@@ -107,6 +107,26 @@ class SimulationEnvironment:
         self.fight_events = []
         self.interaction_matrix = {}
 
+        # Drought & Carrying Capacity Tracker
+        self.drought_timer = 0.0
+
+        # Kinetic Fly Playground: Functional Running Wheel & Swaying Moss Swing
+        self.running_wheel = {
+            "x": 45.0, "y": 140.0, "z": 1.6,
+            "radius": 12.0, "width": 8.0,
+            "angle": 0.0, "angular_vel": 0.0
+        }
+        self.hanging_swing = {
+            "anchor_x": 110.0, "anchor_y": 95.0, "anchor_z": 52.0,
+            "length": 26.0,
+            "angle_x": 0.0, "angle_y": 0.0,
+            "vel_x": 0.0, "vel_y": 0.0
+        }
+
+    @property
+    def is_drought(self):
+        return len(self.food_patches) == 0
+
     def add_food_patch_3d(self, x, y, z=None, food_type="banana_slice", amount=90.0):
         new_id = max([fp["id"] for fp in self.food_patches], default=0) + 1
         if food_type == "sugar_cube":
@@ -415,12 +435,23 @@ class SimulationEnvironment:
         target.vz += (push_dz / norm) * 15.0
         target.brain.firing_rates[target.brain.pop_idx["DN_ESCAPE"]] = 0.85
         aggressor.fights_won += 1
+
+        # Inflict physical combat damage on target fly
+        damage = 18.0
+        if hasattr(target, 'health'):
+            target.health = max(0.0, target.health - damage)
+            if hasattr(target, 'mood'):
+                target.mood = max(0.0, target.mood - 0.22)
+        if hasattr(aggressor, 'mood'):
+            aggressor.mood = min(1.0, aggressor.mood + 0.15)  # Dominance boost
         
         pair_key = f"{min(aggressor.id, target.id)}-{max(aggressor.id, target.id)}"
         self.interaction_matrix[pair_key] = self.interaction_matrix.get(pair_key, 0) + 1
 
-    def step(self, dt_sec=0.016):
+    def step(self, dt_sec=0.016, dt=None):
         """Simulates 3D environmental dynamics including food dropping physics."""
+        if dt is not None:
+            dt_sec = dt
         # 1. Pheromone decay
         alive_p = []
         for p in self.pheromone_traces:
@@ -463,6 +494,42 @@ class SimulationEnvironment:
                         fp["vz"] = 0.0
                         fp["settled"] = True
 
+        # 4. Prune completely eaten food patches (Food Depletion)
+        depleted_food = [fp for fp in self.food_patches if fp.get("amount", 0.0) <= 0.05]
+        if depleted_food:
+            self.food_patches = [fp for fp in self.food_patches if fp.get("amount", 0.0) > 0.05]
+            for dfp in depleted_food:
+                self.events.append({
+                    "type": "food_depleted",
+                    "food_id": dfp["id"],
+                    "label": dfp["label"],
+                    "timestamp_step": len(self.events)
+                })
+
+        # 5. Drought detection & emergency wild drop
+        if len(self.food_patches) == 0:
+            self.drought_timer += dt_sec
+            if self.drought_timer > 65.0:
+                self.add_food_patch_3d(100.0, 100.0, z=65.0, food_type="banana_slice", amount=90.0)
+                self.drought_timer = 0.0
+        else:
+            self.drought_timer = 0.0
+
+        # 6. Kinetic Playground Physics (Running Wheel & Hanging Moss Swing)
+        # Running Wheel rotation & inertial friction decay
+        self.running_wheel["angle"] = (self.running_wheel["angle"] + self.running_wheel["angular_vel"] * dt_sec) % (2 * math.pi)
+        self.running_wheel["angular_vel"] *= math.exp(-0.85 * dt_sec)
+        if abs(self.running_wheel["angular_vel"]) < 0.01:
+            self.running_wheel["angular_vel"] = 0.0
+
+        # Hanging Moss Swing damped harmonic oscillator
+        k_swing = 14.0
+        damping = 0.75
+        self.hanging_swing["vel_x"] += (-k_swing * self.hanging_swing["angle_x"] - damping * self.hanging_swing["vel_x"]) * dt_sec
+        self.hanging_swing["angle_x"] += self.hanging_swing["vel_x"] * dt_sec
+        self.hanging_swing["vel_y"] += (-k_swing * self.hanging_swing["angle_y"] - damping * self.hanging_swing["vel_y"]) * dt_sec
+        self.hanging_swing["angle_y"] += self.hanging_swing["vel_y"] * dt_sec
+
     def to_dict(self):
         """Serializes 3D environment for Three.js rendering."""
         return {
@@ -483,6 +550,20 @@ class SimulationEnvironment:
                 }
                 for fp in self.food_patches
             ],
+            "running_wheel": {
+                "x": self.running_wheel["x"], "y": self.running_wheel["y"], "z": self.running_wheel["z"],
+                "radius": self.running_wheel["radius"], "width": self.running_wheel["width"],
+                "angle": round(self.running_wheel["angle"], 3),
+                "angular_vel": round(self.running_wheel["angular_vel"], 2)
+            },
+            "hanging_swing": {
+                "anchor_x": self.hanging_swing["anchor_x"], "anchor_y": self.hanging_swing["anchor_y"], "anchor_z": self.hanging_swing["anchor_z"],
+                "length": self.hanging_swing["length"],
+                "angle_x": round(self.hanging_swing["angle_x"], 3),
+                "angle_y": round(self.hanging_swing["angle_y"], 3)
+            },
+            "drought_timer": round(self.drought_timer, 1),
+            "is_drought": len(self.food_patches) == 0,
             "acoustic_waves": [
                 {"x": round(w["x"], 1), "y": round(w["y"], 1), "z": round(w["z"], 1), "radius": round(w["radius"], 1), "intensity": round(w["intensity"], 2)}
                 for w in self.acoustic_waves_3d

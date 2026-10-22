@@ -116,6 +116,18 @@
           </div>
         </div>
 
+        <!-- Drought Alert Banner -->
+        <div id="drought-banner" class="drought-banner hidden" role="alert">
+          <div class="drought-content">
+            <span class="drought-icon">&#x26A0;&#xFE0F;</span>
+            <div class="drought-text-group">
+              <strong class="drought-title">FOOD DROUGHT IN TERRARIUM!</strong>
+              <span class="drought-desc">All food patches are depleted. Flies are starving and turning irritable!</span>
+            </div>
+          </div>
+          <button id="btn-drought-feed" class="drought-feed-btn" title="Drop emergency food into terrarium">Drop Emergency Food</button>
+        </div>
+
         <!-- 3D Terrarium Three.js Container -->
         <div class="three-container" id="arena-3d-container">
           <div class="viewport-overlay-hint">
@@ -189,6 +201,46 @@
           </div>
           <div class="thought-text" id="fly-thought-text">
             Initializing 3D connectome dynamics...
+          </div>
+        </div>
+
+        <!-- Physical & Mental Vitals Card -->
+        <div class="fly-vitals-card" id="fly-vitals-card">
+          <div class="vitals-header">
+            <span class="vitals-title">Fly Vitals &amp; Disposition:</span>
+            <span class="vitals-status-badge" id="vital-status-badge">Healthy</span>
+          </div>
+          <div class="vitals-grid">
+            <!-- Health Meter -->
+            <div class="vital-item">
+              <div class="vital-meta">
+                <span class="vital-name">Health</span>
+                <span class="vital-val" id="vital-health-val">100 / 100</span>
+              </div>
+              <div class="vital-track">
+                <div class="vital-fill vital-health-fill" id="vital-health-fill" style="width: 100%;"></div>
+              </div>
+            </div>
+            <!-- Mood Meter -->
+            <div class="vital-item">
+              <div class="vital-meta">
+                <span class="vital-name">Mood</span>
+                <span class="vital-val" id="vital-mood-val">75% (Content)</span>
+              </div>
+              <div class="vital-track">
+                <div class="vital-fill vital-mood-fill" id="vital-mood-fill" style="width: 75%;"></div>
+              </div>
+            </div>
+            <!-- Fun / Play (Kinetic Entertainment) Meter -->
+            <div class="vital-item">
+              <div class="vital-meta">
+                <span class="vital-name">Fun / Play</span>
+                <span class="vital-val" id="vital-fun-val">50%</span>
+              </div>
+              <div class="vital-track">
+                <div class="vital-fill vital-fun-fill" id="vital-fun-fill" style="width: 50%;"></div>
+              </div>
+            </div>
           </div>
         </div>
 

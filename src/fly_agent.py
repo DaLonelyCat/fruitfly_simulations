@@ -120,6 +120,17 @@ class FruitFlyAgent:
         self.escape_timer = 0
         self.last_action_tag = "walking"
         
+        # Health & Mortality System (100 HP)
+        self.health = 100.0
+        self.max_health = 100.0
+        self.is_dead = False
+        self.death_timer = 0.0
+
+        # Dynamic Mood & Entertainment
+        self.mood = 0.75               # 0.0 (Enraged/Hostile) to 1.0 (Ecstatic)
+        self.entertainment = 0.5       # 0.0 (Bored) to 1.0 (Entertained)
+        self.attack_cooldown = random.uniform(1.0, 3.0)
+
         # Metabolic & Dopamine State
         self.satiety = 0.6             # 0.0 (starving) to 1.0 (full)
         self.dopamine_level = float(archetype["personality"].get("dopamine", 0.5))
@@ -136,6 +147,18 @@ class FruitFlyAgent:
         self.fights_won = 0
         self.current_target_id = None
 
+    @property
+    def action(self):
+        return self.last_action_tag
+
+    @property
+    def archetype(self):
+        return self.archetype_name
+
+    @property
+    def wing_threat_posture(self):
+        return self.wing_left_angle >= 50.0 and self.wing_right_angle >= 50.0
+
     def trigger_flight(self, altitude_target=50.0):
         """Forces the fly to launch into 3D flight toward altitude_target."""
         self.is_airborne = True
@@ -149,8 +172,12 @@ class FruitFlyAgent:
         self.brain.inject_optogenetic_stimulus(pop_name, intensity, duration_ms)
 
     def update_sensors_and_brain(self, env, other_flies, dt_sec=0.016):
-
         """Calculates 3D sensory receptive fields and executes the connectome brain."""
+        if self.health <= 0.0 or self.is_dead:
+            self.is_dead = True
+            empty_cmd = {"walk": 0.0, "turn_bias": 0.5, "escape": 0.0, "lunge": 0.0, "song": 0.0, "feed": 0.0}
+            return empty_cmd, None, 999.0, 0.0, 999.0, None
+
         # 1. 3D Nearest Fly Detection
         nearest_fly = None
         min_dist = 999.0
@@ -216,11 +243,87 @@ class FruitFlyAgent:
         
         return motor_commands, nearest_fly, min_dist, rel_angle, food_dist, food_grad
 
+    def step(self, env, flies=None, dt_sec=0.016):
+        """Single-step update covering brain integration, physics kinematics, and interactions."""
+        if flies is None:
+            flies = [self]
+        motor_commands, nearest_fly, min_dist, rel_angle, food_dist, food_grad = self.update_sensors_and_brain(env, flies, dt_sec=dt_sec)
+        self.apply_physics(motor_commands, nearest_fly, min_dist, rel_angle, food_dist, food_grad, env, dt_sec=dt_sec)
+
     def apply_physics(self, motor_commands, nearest_fly, min_dist, rel_angle, food_dist, food_grad, env, dt_sec=0.016):
         """
         Translates descending neural commands into 3D body kinematics, flight transitions,
-        wing articulations, and dopamine reward feeding.
+        wing articulations, dopamine reward feeding, and kinetic playground interactions.
         """
+        # 0. Check Vital Signs & Mortality
+        if self.health <= 0.0 or self.is_dead:
+            self.is_dead = True
+            self.health = 0.0
+            self.last_action_tag = "dead"
+            self.death_timer += dt_sec
+            self.roll = math.pi  # authentic inverted death posture (on back)
+            self.pitch = 0.0
+            self.vx = 0.0
+            self.vy = 0.0
+            self.vz = 0.0
+            self.z = 1.6
+            self.speed = 0.0
+            self.is_airborne = False
+            self.wing_left_angle = 15.0
+            self.wing_right_angle = 15.0
+            self.brain.last_thought = "Vital signs ceased. Neural connectome inactive."
+            return
+
+        # Kinetic Fly Playground Interactions
+        on_playground = False
+        if not self.is_airborne:
+            # A. Running Wheel at (45, 140, 1.6)
+            if hasattr(env, 'running_wheel'):
+                wheel = env.running_wheel
+                dist_wheel = math.hypot(self.x - wheel["x"], self.y - wheel["y"])
+                if dist_wheel < (wheel["radius"] + 3.0) and abs(self.z - wheel["z"]) < 8.0:
+                    run_spd = max(3.5, math.hypot(self.vx, self.vy))
+                    wheel["angular_vel"] = min(20.0, wheel["angular_vel"] + run_spd * dt_sec * 6.0)
+                    self.entertainment = min(1.0, self.entertainment + 0.65 * dt_sec)
+                    self.mood = min(1.0, self.mood + 0.35 * dt_sec)
+                    self.dopamine_level = min(1.0, self.dopamine_level + 0.20 * dt_sec)
+                    self.last_action_tag = "exercising"
+                    self.brain.last_thought = "Exercising on running wheel! Dopamine surge, feeling great!"
+                    on_playground = True
+
+            # B. Hanging Moss Swing at (110, 95, 32)
+            if not on_playground and hasattr(env, 'hanging_swing'):
+                swing = env.hanging_swing
+                swing_x = swing["anchor_x"] + swing["length"] * math.sin(swing["angle_x"])
+                swing_y = swing["anchor_y"] + swing["length"] * math.sin(swing["angle_y"])
+                swing_z = swing["anchor_z"] - swing["length"] * math.cos(swing["angle_x"])
+                dist_swing = math.sqrt((self.x - swing_x)**2 + (self.y - swing_y)**2 + (self.z - swing_z)**2)
+                if dist_swing < 7.0:
+                    swing["vel_x"] += max(0.5, abs(self.vx)) * 0.08
+                    swing["vel_y"] += max(0.5, abs(self.vy)) * 0.08
+                    self.entertainment = min(1.0, self.entertainment + 0.50 * dt_sec)
+                    self.mood = min(1.0, self.mood + 0.30 * dt_sec)
+                    self.last_action_tag = "swinging"
+                    self.brain.last_thought = "Swaying on the hanging moss swing! What fun!"
+                    on_playground = True
+
+        # Attacks in Bad Mood (mood < 0.28)
+        self.attack_cooldown = max(0.0, self.attack_cooldown - dt_sec)
+        if self.mood < 0.28 and self.attack_cooldown <= 0.0 and nearest_fly and min_dist < 12.0 and not getattr(nearest_fly, 'is_dead', False):
+            self.is_lunging = True
+            self.lunge_timer = 15
+            self.last_action_tag = "lunging"
+            self.wing_left_angle = 65.0
+            self.wing_right_angle = 65.0
+            dx = nearest_fly.x - self.x
+            dy = nearest_fly.y - self.y
+            d_norm = math.hypot(dx, dy) + 0.001
+            self.vx += (dx / d_norm) * 32.0
+            self.vy += (dy / d_norm) * 32.0
+            env.record_fight(self, nearest_fly)
+            self.attack_cooldown = random.uniform(2.5, 4.0)
+            self.brain.last_thought = f"Irritable & enraged! Lunging attack at Fly {nearest_fly.id} ({nearest_fly.archetype_name})!"
+
         # Decay active dopamine surge visual timer
         if self.dopamine_surge_active:
             self.dopamine_surge_timer -= 1
@@ -313,6 +416,7 @@ class FruitFlyAgent:
             if eaten > 0:
                 self.food_eaten_total += eaten
                 self.satiety = min(1.0, self.satiety + eaten * 0.8)
+                self.mood = min(1.0, self.mood + 0.28 * dopamine_surge)
                 
                 # INJECT DOPAMINE INTO BRAIN:
                 # Elevates dopamine level, stimulating PAM dopaminergic cluster (MB_DAN)
@@ -373,7 +477,8 @@ class FruitFlyAgent:
                     self.pitch = 0.0
             else:
                 # Walking Mode on Ground or Perch (Strict minimum clearance Z >= 1.6mm)
-                self.last_action_tag = "walking"
+                if not on_playground:
+                    self.last_action_tag = "walking"
                 self.roll = 0.0
                 self.pitch = 0.0
                 if self.z < 1.6:
@@ -448,9 +553,24 @@ class FruitFlyAgent:
         if self.gender == "male" and not self.is_airborne:
             env.deposit_cva_3d(self.x, self.y, self.z, amount=0.08)
             
-        # Metabolic decay
-        self.satiety = max(0.05, self.satiety - 0.00025)
-        self.brain.personality["hunger"] = max(0.05, 1.0 - self.satiety)
+        # Metabolic decay & Starvation damage
+        self.satiety = max(0.0, self.satiety - 0.00035 * dt_sec * 60)
+        self.brain.personality["hunger"] = max(0.0, min(1.0, 1.0 - self.satiety))
+
+        if self.satiety <= 0.02:
+            self.health = max(0.0, self.health - 2.2 * dt_sec)
+            self.brain.last_thought = "Starving! Health deteriorating, need food immediately!"
+        elif self.satiety > 0.60 and self.mood > 0.40 and self.health < 100.0:
+            self.health = min(100.0, self.health + 0.8 * dt_sec)
+
+        # Entertainment decay & Dynamic Mood Dynamics
+        self.entertainment = max(0.0, self.entertainment - 0.008 * dt_sec)
+        if self.satiety < 0.25:
+            self.mood = max(0.0, self.mood - 0.045 * dt_sec)
+        if self.entertainment < 0.20:
+            self.mood = max(0.0, self.mood - 0.025 * dt_sec)
+        if self.satiety > 0.60 and self.entertainment > 0.50:
+            self.mood = min(1.0, self.mood + 0.02 * dt_sec)
 
     def to_dict(self):
         """Serializes 3D fly state for Three.js network rendering."""
@@ -459,6 +579,11 @@ class FruitFlyAgent:
             "archetype": self.archetype_name,
             "gender": self.gender,
             "color": self.color,
+            "health": round(self.health, 1),
+            "max_health": self.max_health,
+            "mood": round(self.mood, 2),
+            "entertainment": round(self.entertainment, 2),
+            "is_dead": self.is_dead,
             "x": round(self.x, 2),
             "y": round(self.y, 2),
             "z": round(max(1.6, self.z), 2),

@@ -408,6 +408,79 @@ body {
 }
 
 /* ==========================================================================
+   Drought Alert Banner
+   ========================================================================== */
+
+.drought-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: linear-gradient(90deg, rgba(239, 68, 68, 0.22), rgba(185, 28, 28, 0.35));
+  border: 1px solid rgba(239, 68, 68, 0.55);
+  border-radius: var(--radius-sm);
+  margin-bottom: 10px;
+  animation: droughtPulse 2s infinite ease-in-out;
+  transition: opacity var(--transition-fast), transform var(--transition-fast);
+}
+
+.drought-banner.hidden {
+  display: none !important;
+}
+
+@keyframes droughtPulse {
+  0%, 100% { border-color: rgba(239, 68, 68, 0.4); box-shadow: 0 0 10px rgba(239, 68, 68, 0.15); }
+  50% { border-color: rgba(239, 68, 68, 0.85); box-shadow: 0 0 20px rgba(239, 68, 68, 0.35); }
+}
+
+.drought-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.drought-icon {
+  font-size: 20px;
+}
+
+.drought-text-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.drought-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fca5a5;
+  letter-spacing: 0.02em;
+}
+
+.drought-desc {
+  font-size: 11.5px;
+  color: #fecaca;
+}
+
+.drought-feed-btn {
+  background: linear-gradient(135deg, #ef4444, #b91c1c);
+  color: #ffffff;
+  border: 1px solid #f87171;
+  border-radius: var(--radius-xs);
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform var(--transition-fast), filter var(--transition-fast);
+}
+
+.drought-feed-btn:hover {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+}
+
+/* ==========================================================================
    Three.js Containers
    ========================================================================== */
 
@@ -626,6 +699,135 @@ body {
   color: var(--text-primary);
   font-style: italic;
   line-height: 1.45;
+}
+
+/* ==========================================================================
+   Fly Vitals & Disposition Card
+   ========================================================================== */
+
+.fly-vitals-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-prominent);
+  border-radius: var(--radius-sm);
+}
+
+.vitals-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.vitals-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.vitals-status-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--radius-xs);
+  background-color: var(--accent-emerald-bg);
+  color: var(--accent-emerald);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.vitals-status-badge.status-warning {
+  background-color: var(--accent-amber-bg);
+  color: var(--accent-amber);
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+.vitals-status-badge.status-danger {
+  background-color: var(--accent-rose-bg);
+  color: var(--accent-rose);
+  border-color: rgba(255, 51, 102, 0.4);
+}
+
+.vitals-status-badge.status-dead {
+  background-color: rgba(148, 163, 184, 0.2);
+  color: #94a3b8;
+  border-color: rgba(148, 163, 184, 0.4);
+}
+
+.vitals-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.vital-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.vital-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+}
+
+.vital-name {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.vital-val {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.vital-track {
+  width: 100%;
+  height: 6px;
+  background-color: rgba(15, 23, 42, 0.6);
+  border: 1px solid var(--border-subtle);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.vital-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.2s ease-out, background-color 0.2s ease-out;
+}
+
+.vital-health-fill {
+  background: linear-gradient(90deg, #10b981, #34d399);
+}
+
+.vital-health-fill.low {
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+
+.vital-health-fill.critical {
+  background: linear-gradient(90deg, #ef4444, #f87171);
+}
+
+.vital-mood-fill {
+  background: linear-gradient(90deg, #06b6d4, #00d2ff);
+}
+
+.vital-mood-fill.agitated {
+  background: linear-gradient(90deg, #f59e0b, #d97706);
+}
+
+.vital-mood-fill.aggressive {
+  background: linear-gradient(90deg, #ef4444, #dc2626);
+}
+
+.vital-fun-fill {
+  background: linear-gradient(90deg, #8b5cf6, #a855f7);
 }
 
 /* Optogenetic Stimulation Bar */
@@ -1063,6 +1265,8 @@ body {
 }
 
 .viewport-card.pip-mode .thought-bubble-card,
+.viewport-card.pip-mode .fly-vitals-card,
+.viewport-card.pip-mode .drought-banner,
 .viewport-card.pip-mode .tabs-nav,
 .viewport-card.pip-mode .events-ticker-container,
 .viewport-card.pip-mode .arena-stats-bar,

@@ -47,6 +47,9 @@ class Arena3DView {
     this.flyMeshes = {};
     this.foodMeshes = {};
     this.dopamineParticles = [];
+    this.combatSparkParticles = [];
+    this.foodCrumbleParticles = [];
+    this.envData = null;
     this.showHitboxes = true;
 
     // Smooth Follow Camera State
@@ -460,6 +463,145 @@ class Arena3DView {
     floorHb.position.set(100, 100, 1.6);
     this.objectHitboxesGroup.add(floorHb);
 
+    // 7. Kinetic Fly Playground: Functional Running Wheel (x=45, y=140, z=12)
+    const wheelGroup = new THREE.Group();
+    wheelGroup.position.set(45, 140, 12);
+
+    // Stanchions (A-frame support struts)
+    const stanMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.6, roughness: 0.35 });
+    const stanGeom = new THREE.CylinderGeometry(0.5, 0.8, 14, 8);
+    
+    // Left Support Legs
+    const stanL1 = new THREE.Mesh(stanGeom, stanMat);
+    stanL1.position.set(-4.5, -3.8, -5.5);
+    stanL1.rotation.z = 0.25;
+    stanL1.rotation.y = 0.25;
+    wheelGroup.add(stanL1);
+
+    const stanL2 = new THREE.Mesh(stanGeom, stanMat);
+    stanL2.position.set(-4.5, 3.8, -5.5);
+    stanL2.rotation.z = 0.25;
+    stanL2.rotation.y = -0.25;
+    wheelGroup.add(stanL2);
+
+    // Right Support Legs
+    const stanR1 = new THREE.Mesh(stanGeom, stanMat);
+    stanR1.position.set(4.5, -3.8, -5.5);
+    stanR1.rotation.z = -0.25;
+    stanR1.rotation.y = 0.25;
+    wheelGroup.add(stanR1);
+
+    const stanR2 = new THREE.Mesh(stanGeom, stanMat);
+    stanR2.position.set(4.5, 3.8, -5.5);
+    stanR2.rotation.z = -0.25;
+    stanR2.rotation.y = -0.25;
+    wheelGroup.add(stanR2);
+
+    // Central Axle
+    const axleGeom = new THREE.CylinderGeometry(0.45, 0.45, 10, 8);
+    const axle = new THREE.Mesh(axleGeom, stanMat);
+    axle.rotation.z = Math.PI / 2;
+    wheelGroup.add(axle);
+
+    // Rotating Wheel Cage
+    const wheelCage = new THREE.Group();
+    const rimMat = new THREE.MeshStandardMaterial({
+      color: 0x38bdf8,
+      metalness: 0.3,
+      roughness: 0.25,
+      transparent: true,
+      opacity: 0.82,
+      side: THREE.DoubleSide
+    });
+    
+    const rimGeom = new THREE.TorusGeometry(12.0, 0.4, 8, 32);
+    const rimLeft = new THREE.Mesh(rimGeom, rimMat);
+    rimLeft.position.set(-3.5, 0, 0);
+    rimLeft.rotation.y = Math.PI / 2;
+    wheelCage.add(rimLeft);
+
+    const rimRight = new THREE.Mesh(rimGeom, rimMat);
+    rimRight.position.set(3.5, 0, 0);
+    rimRight.rotation.y = Math.PI / 2;
+    wheelCage.add(rimRight);
+
+    // Slats (tread track)
+    const slatGeom = new THREE.BoxGeometry(7.0, 0.35, 0.5);
+    const slatMat = new THREE.MeshStandardMaterial({ color: 0xca8a04, roughness: 0.6 });
+    for (let i = 0; i < 24; i++) {
+      const ang = (i / 24) * Math.PI * 2;
+      const slat = new THREE.Mesh(slatGeom, slatMat);
+      slat.position.set(0, Math.cos(ang) * 12.0, Math.sin(ang) * 12.0);
+      slat.rotation.x = -ang;
+      wheelCage.add(slat);
+    }
+
+    // Radial Spokes
+    const spokeGeom = new THREE.CylinderGeometry(0.2, 0.2, 24.0, 6);
+    for (let i = 0; i < 4; i++) {
+      const spoke = new THREE.Mesh(spokeGeom, rimMat);
+      spoke.rotation.x = (i / 4) * Math.PI;
+      spoke.position.set(-3.5, 0, 0);
+      wheelCage.add(spoke);
+      const spokeR = spoke.clone();
+      spokeR.position.set(3.5, 0, 0);
+      wheelCage.add(spokeR);
+    }
+
+    wheelGroup.add(wheelCage);
+    vivariumGroup.add(wheelGroup);
+    this.runningWheelMesh = wheelCage;
+
+    // Running Wheel Hitbox
+    const wheelHbGeom = new THREE.CylinderGeometry(12.5, 12.5, 8.5, 16);
+    const wheelHb = new THREE.Mesh(wheelHbGeom, objHbMat);
+    wheelHb.position.set(45, 140, 12);
+    wheelHb.rotation.z = Math.PI / 2;
+    this.objectHitboxesGroup.add(wheelHb);
+
+    // 8. Kinetic Fly Playground: Swaying Hanging Moss Swing (Anchor on branch at 110, 95, 52)
+    const swingAnchor = new THREE.Group();
+    swingAnchor.position.set(110, 95, 52);
+
+    const ropeMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.9 });
+    const ropeGeom = new THREE.CylinderGeometry(0.18, 0.18, 26, 6);
+    
+    const ropeL = new THREE.Mesh(ropeGeom, ropeMat);
+    ropeL.position.set(-2.5, 0, -13);
+    swingAnchor.add(ropeL);
+
+    const ropeR = new THREE.Mesh(ropeGeom, ropeMat);
+    ropeR.position.set(2.5, 0, -13);
+    swingAnchor.add(ropeR);
+
+    // Moss Disc Seat at Z = -26
+    const discGeom = new THREE.CylinderGeometry(4.5, 4.5, 1.2, 16);
+    const discMat = new THREE.MeshStandardMaterial({
+      color: 0x2e7d32,
+      roughness: 0.85,
+      metalness: 0.1
+    });
+    const disc = new THREE.Mesh(discGeom, discMat);
+    disc.position.set(0, 0, -26);
+    disc.rotation.x = Math.PI / 2;
+    disc.castShadow = true;
+    swingAnchor.add(disc);
+
+    // Woven Twig Rim
+    const rimTorus = new THREE.TorusGeometry(4.6, 0.35, 6, 20);
+    const rimTwig = new THREE.Mesh(rimTorus, ropeMat);
+    rimTwig.position.set(0, 0, -26);
+    swingAnchor.add(rimTwig);
+
+    vivariumGroup.add(swingAnchor);
+    this.hangingSwingAnchorGroup = swingAnchor;
+
+    // Swing Hitbox
+    const swingHbGeom = new THREE.CylinderGeometry(5.0, 5.0, 2.0, 12);
+    const swingHb = new THREE.Mesh(swingHbGeom, objHbMat);
+    swingHb.position.set(110, 95, 26);
+    this.objectHitboxesGroup.add(swingHb);
+
     this.scene.add(vivariumGroup);
   }
 
@@ -584,6 +726,21 @@ class Arena3DView {
   updateState(state) {
     if (!state) return;
 
+    if (state.environment) {
+      this.envData = state.environment;
+      // Trigger combat sparks on aggression events
+      if (state.environment.recent_events) {
+        state.environment.recent_events.forEach(ev => {
+          if (ev.type === 'aggression') {
+            const aggrObj = this.flyMeshes[ev.aggressor_id];
+            if (aggrObj && Math.random() < 0.4) {
+              this.emitCombatSparks(aggrObj.root.position.x, aggrObj.root.position.y, aggrObj.root.position.z + 1.2);
+            }
+          }
+        });
+      }
+    }
+
     if (state.selected_fly_id) {
       this.selectedFlyId = state.selected_fly_id;
     }
@@ -615,13 +772,16 @@ class Arena3DView {
       meshGroup.position.x = fp.x;
       meshGroup.position.y = fp.y;
 
-      const scale = Math.max(0.25, fp.amount / 100.0);
+      // Dynamic visual food shrinking based on remaining amount
+      const scale = Math.max(0.12, fp.amount / 100.0);
       meshGroup.scale.set(scale, scale, scale);
     });
 
     for (const id in this.foodMeshes) {
       if (!activeIds.has(parseInt(id, 10))) {
-        this.scene.remove(this.foodMeshes[id]);
+        const removedMesh = this.foodMeshes[id];
+        this.emitFoodCrumble(removedMesh.position.x, removedMesh.position.y, removedMesh.position.z);
+        this.scene.remove(removedMesh);
         delete this.foodMeshes[id];
       }
     }
@@ -1072,6 +1232,42 @@ class Arena3DView {
     }
   }
 
+  emitCombatSparks(x, y, z) {
+    for (let i = 0; i < 7; i++) {
+      const pGeom = new THREE.SphereGeometry(0.35, 6, 6);
+      const pMat = new THREE.MeshBasicMaterial({ color: 0xff3300 });
+      const p = new THREE.Mesh(pGeom, pMat);
+      p.position.set(x + (Math.random() - 0.5) * 1.5, y + (Math.random() - 0.5) * 1.5, z);
+      this.scene.add(p);
+      this.combatSparkParticles.push({
+        mesh: p,
+        vx: (Math.random() - 0.5) * 24.0,
+        vy: (Math.random() - 0.5) * 24.0,
+        vz: Math.random() * 20.0 + 4.0,
+        life: 18
+      });
+    }
+  }
+
+  emitFoodCrumble(x, y, z) {
+    const colors = [0xca8a04, 0x713f12, 0xfef08a];
+    for (let i = 0; i < 14; i++) {
+      const c = colors[i % colors.length];
+      const pGeom = new THREE.DodecahedronGeometry(0.45, 0);
+      const pMat = new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.85 });
+      const p = new THREE.Mesh(pGeom, pMat);
+      p.position.set(x + (Math.random() - 0.5) * 3.5, y + (Math.random() - 0.5) * 3.5, z + Math.random() * 2.5);
+      this.scene.add(p);
+      this.foodCrumbleParticles.push({
+        mesh: p,
+        vx: (Math.random() - 0.5) * 10.0,
+        vy: (Math.random() - 0.5) * 10.0,
+        vz: Math.random() * 8.0 + 2.0,
+        life: 24
+      });
+    }
+  }
+
   updateCamera(dt) {
     if (this.cameraMode === 'follow') {
       const selFlyObj = this.flyMeshes[this.selectedFlyId];
@@ -1187,7 +1383,17 @@ class Arena3DView {
         flyObj.root.rotation.x += (flyObj.targetRoll - flyObj.root.rotation.x) * rotAlpha;
       }
 
-      if (fly) {
+      if (fly && (fly.is_dead || fly.action === 'dead')) {
+        // Authentic inverted death posture on back with curled legs
+        flyObj.root.rotation.x = Math.PI;
+        flyObj.root.rotation.y = 0;
+        flyObj.wingLeft.rotation.set(0, 0, 15 * Math.PI / 180);
+        flyObj.wingRight.rotation.set(0, 0, -15 * Math.PI / 180);
+        flyObj.legs.forEach((legGroup) => {
+          legGroup.rotation.z = 0.85; // curl inward toward thorax
+          legGroup.rotation.y = 0.0;
+        });
+      } else if (fly) {
         // Wings & Halteres
         if (fly.is_airborne || fly.action === 'flying' || fly.action === 'takeoff') {
           const wingFlap = Math.sin(t * 70.0) * 0.65;
@@ -1227,10 +1433,19 @@ class Arena3DView {
       }
     }
 
-    // 3. Camera Update
+    // 3. Kinetic Playground: Running Wheel and Hanging Swing Animations
+    if (this.runningWheelMesh && this.envData && this.envData.running_wheel) {
+      this.runningWheelMesh.rotation.x = this.envData.running_wheel.angle;
+    }
+    if (this.hangingSwingAnchorGroup && this.envData && this.envData.hanging_swing) {
+      this.hangingSwingAnchorGroup.rotation.y = this.envData.hanging_swing.angle_x;
+      this.hangingSwingAnchorGroup.rotation.x = this.envData.hanging_swing.angle_y;
+    }
+
+    // 4. Camera Update
     this.updateCamera(dt);
 
-    // 4. Dopamine Particles
+    // 5. Dopamine Particles
     const aliveParticles = [];
     for (const p of this.dopamineParticles) {
       p.life -= 1;
@@ -1246,6 +1461,40 @@ class Arena3DView {
       }
     }
     this.dopamineParticles = aliveParticles;
+
+    // 6. Combat Spark Particles
+    const aliveCombat = [];
+    for (const p of this.combatSparkParticles) {
+      p.life -= 1;
+      p.mesh.position.z += p.vz * dt;
+      p.mesh.position.x += p.vx * dt;
+      p.mesh.position.y += p.vy * dt;
+      p.vz -= 35.0 * dt;
+      p.mesh.material.opacity = p.life / 18.0;
+      if (p.life > 0) {
+        aliveCombat.push(p);
+      } else {
+        this.scene.remove(p.mesh);
+      }
+    }
+    this.combatSparkParticles = aliveCombat;
+
+    // 7. Food Crumble Particles
+    const aliveCrumble = [];
+    for (const p of this.foodCrumbleParticles) {
+      p.life -= 1;
+      p.mesh.position.z += p.vz * dt;
+      p.mesh.position.x += p.vx * dt;
+      p.mesh.position.y += p.vy * dt;
+      p.vz -= 30.0 * dt;
+      p.mesh.material.opacity = p.life / 24.0;
+      if (p.life > 0) {
+        aliveCrumble.push(p);
+      } else {
+        this.scene.remove(p.mesh);
+      }
+    }
+    this.foodCrumbleParticles = aliveCrumble;
 
     this.renderer.render(this.scene, this.camera);
   }

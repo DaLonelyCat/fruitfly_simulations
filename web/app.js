@@ -71,6 +71,16 @@
   const btnCancelSpawn = document.getElementById('btn-cancel-spawn');
   const btnConfirmSpawn = document.getElementById('btn-confirm-spawn');
 
+  const droughtBanner = document.getElementById('drought-banner');
+  const btnDroughtFeed = document.getElementById('btn-drought-feed');
+  const vitalStatusBadge = document.getElementById('vital-status-badge');
+  const vitalHealthVal = document.getElementById('vital-health-val');
+  const vitalHealthFill = document.getElementById('vital-health-fill');
+  const vitalMoodVal = document.getElementById('vital-mood-val');
+  const vitalMoodFill = document.getElementById('vital-mood-fill');
+  const vitalFunVal = document.getElementById('vital-fun-val');
+  const vitalFunFill = document.getElementById('vital-fun-fill');
+
   // Application State
   let ws = null;
   let currentState = null;
@@ -503,6 +513,19 @@
       }
     });
 
+    // Drought Emergency Feed Button
+    if (btnDroughtFeed) {
+      btnDroughtFeed.addEventListener('click', () => {
+        sendCommand({
+          action: 'add_food',
+          x: 100.0 + (Math.random() * 40 - 20),
+          y: 100.0 + (Math.random() * 40 - 20),
+          z: 60.0,
+          food_type: 'banana_slice'
+        });
+      });
+    }
+
     // Fly Selector Dropdown
     flySelectDropdown.addEventListener('change', (e) => {
       selectedFlyId = parseInt(e.target.value, 10);
@@ -596,6 +619,15 @@
       statFightCount.textContent = currentState.environment.total_fights || 0;
       updateEventsTicker(currentState.environment.recent_events || []);
       updateSocialMatrix(currentState.environment.interaction_pairs || {});
+
+      // Drought Banner Visibility
+      if (droughtBanner) {
+        if (currentState.environment.is_drought) {
+          droughtBanner.classList.remove('hidden');
+        } else {
+          droughtBanner.classList.add('hidden');
+        }
+      }
     }
 
     // Pause button state
@@ -627,6 +659,60 @@
       if (selFly.dopamine_surge) {
         totalDopamineSurges += 1;
         statDopamineCount.textContent = totalDopamineSurges;
+      }
+
+      // Update Physical & Mental Vitals Card
+      const hp = selFly.health !== undefined ? selFly.health : 100.0;
+      const maxHp = selFly.max_health || 100.0;
+      const mood = selFly.mood !== undefined ? selFly.mood : 0.75;
+      const fun = selFly.entertainment !== undefined ? selFly.entertainment : 0.5;
+      const isDead = Boolean(selFly.is_dead);
+
+      if (vitalHealthVal && vitalHealthFill) {
+        vitalHealthVal.textContent = `${Math.round(hp)} / ${Math.round(maxHp)}`;
+        const hpPct = Math.max(0, Math.min(100, Math.round((hp / maxHp) * 100)));
+        vitalHealthFill.style.width = `${hpPct}%`;
+        vitalHealthFill.className = 'vital-fill vital-health-fill' + (hpPct < 25 ? ' critical' : hpPct < 55 ? ' low' : '');
+      }
+
+      if (vitalMoodVal && vitalMoodFill) {
+        const moodPct = Math.max(0, Math.min(100, Math.round(mood * 100)));
+        let moodLabel = 'Content';
+        let moodClass = '';
+        if (mood < 0.28) {
+          moodLabel = 'Aggressive / Enraged';
+          moodClass = ' aggressive';
+        } else if (mood < 0.5) {
+          moodLabel = 'Irritable / Restless';
+          moodClass = ' agitated';
+        } else if (mood > 0.8) {
+          moodLabel = 'Euphoric';
+        }
+        vitalMoodVal.textContent = `${moodPct}% (${moodLabel})`;
+        vitalMoodFill.style.width = `${moodPct}%`;
+        vitalMoodFill.className = 'vital-fill vital-mood-fill' + moodClass;
+      }
+
+      if (vitalFunVal && vitalFunFill) {
+        const funPct = Math.max(0, Math.min(100, Math.round(fun * 100)));
+        vitalFunVal.textContent = `${funPct}%`;
+        vitalFunFill.style.width = `${funPct}%`;
+      }
+
+      if (vitalStatusBadge) {
+        if (isDead || hp <= 0) {
+          vitalStatusBadge.textContent = 'Deceased (Respawning)';
+          vitalStatusBadge.className = 'vitals-status-badge status-dead';
+        } else if (hp < 30 || mood < 0.28) {
+          vitalStatusBadge.textContent = hp < 30 ? 'Critical' : 'Hostile';
+          vitalStatusBadge.className = 'vitals-status-badge status-danger';
+        } else if (hp < 60 || mood < 0.5) {
+          vitalStatusBadge.textContent = 'Distressed';
+          vitalStatusBadge.className = 'vitals-status-badge status-warning';
+        } else {
+          vitalStatusBadge.textContent = 'Healthy';
+          vitalStatusBadge.className = 'vitals-status-badge';
+        }
       }
 
       const telem = selFly.telemetry;

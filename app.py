@@ -1,12 +1,23 @@
+import os
 import asyncio
 import json
 from pathlib import Path
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from src.simulation_engine import FruitFlySimulation
 
 app = FastAPI(title="Drosophila Connectome Multi-Agent Simulation")
+
+# Enable Cross-Origin Resource Sharing (CORS) for Cloudflare Pages
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Global simulation instance
 sim = FruitFlySimulation(arena_w=200.0, arena_d=200.0, arena_h=100.0, num_flies=7)
@@ -179,4 +190,5 @@ async def startup_event():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("app:app", host="127.0.0.1", port=8000, reload=False)
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("app:app", host="0.0.0.0", port=port, reload=False)

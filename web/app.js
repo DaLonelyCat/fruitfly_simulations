@@ -26,6 +26,13 @@
   const btnFlyTakeoff = document.getElementById('btn-fly-takeoff');
   const btnResetCamArena = document.getElementById('btn-reset-cam-arena');
   const btnFullscreen = document.getElementById('btn-fullscreen');
+  const btnCloudConfig = document.getElementById('btn-cloud-config');
+  const cloudConfigModal = document.getElementById('cloud-config-modal');
+  const cloudBackendInput = document.getElementById('cloud-backend-input');
+  const btnCloseCloud = document.getElementById('btn-close-cloud');
+  const btnResetBackend = document.getElementById('btn-reset-backend');
+  const btnSaveBackend = document.getElementById('btn-save-backend');
+  const backendStatusPill = document.getElementById('backend-status-pill');
 
   const camOrbit = document.getElementById('cam-orbit');
   const camFollow = document.getElementById('cam-follow');
@@ -85,8 +92,39 @@
   let availableArchetypes = {};
   let selectedSpawnArchetype = 'Romeo';
 
+  // Backend Configuration (Supports localhost, Cloudflare Pages proxy, or standalone cloud host)
+  function getBackendConfig() {
+    // 1. Check URL query parameters (?backend=https://...)
+    const urlParams = new URLSearchParams(window.location.search);
+    const paramBackend = urlParams.get('backend');
+    if (paramBackend) {
+      localStorage.setItem('drosophila_backend_url', paramBackend.replace(/\/+$/, ''));
+    }
+
+    // 2. Check localStorage (persisted for Cloudflare Pages visits)
+    const saved = localStorage.getItem('drosophila_backend_url');
+    if (saved) {
+      const clean = saved.replace(/\/+$/, '');
+      const wsProto = clean.startsWith('https') ? 'wss:' : 'ws:';
+      const wsHost = clean.replace(/^https?:\/\//, '');
+      return {
+        httpBase: clean,
+        wsUrl: `${wsProto}//${wsHost}/ws`
+      };
+    }
+
+    // 3. Fallback to same-origin (standard for local dev or unified server)
+    const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    return {
+      httpBase: '',
+      wsUrl: `${proto}//${window.location.host}/ws`
+    };
+  }
+
   // Initialize
   async function init() {
+    const backendConfig = getBackendConfig();
+
     // 1. Initialize 3D Behavioral Terrarium
     arena3D = new window.Arena3DView('arena-3d-container');
 
@@ -98,12 +136,12 @@
 
     // 4. Fetch metadata
     try {
-      const connRes = await fetch('/api/connectome');
+      const connRes = await fetch(`${backendConfig.httpBase}/api/connectome`);
       const connData = await connRes.json();
       brain2DVisualizer.setConnectomeData(connData);
       initPopulationBars(connData.subcircuit.populations);
 
-      const archRes = await fetch('/api/archetypes');
+      const archRes = await fetch(`${backendConfig.httpBase}/api/archetypes`);
       availableArchetypes = await archRes.json();
       renderArchetypeGrid();
     } catch (err) {
@@ -171,12 +209,21 @@
 
   // WebSocket Connection
   function connectWebSocket() {
-    const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${proto}//${window.location.host}/ws`;
-    ws = new WebSocket(wsUrl);
+    const config = getBackendConfig();
+    try {
+      ws = new WebSocket(config.wsUrl);
+    } catch (err) {
+      console.warn('WebSocket connection error:', err);
+    }
+
+    if (!ws) return;
 
     ws.onopen = () => {
-      console.log('Connectome 3D WebSocket connected.');
+      console.log('Connectome 3D WebSocket connected to:', config.wsUrl);
+      if (backendStatusPill) {
+        backendStatusPill.textContent = 'Connected';
+        backendStatusPill.style.color = '#34d399';
+      }
     };
 
     ws.onmessage = (event) => {
@@ -186,11 +233,19 @@
 
     ws.onclose = () => {
       console.log('WebSocket disconnected. Reconnecting in 1.5s...');
+      if (backendStatusPill) {
+        backendStatusPill.textContent = 'Offline';
+        backendStatusPill.style.color = '#f59e0b';
+      }
       setTimeout(connectWebSocket, 1500);
     };
 
     ws.onerror = (err) => {
       console.error('WebSocket error:', err);
+      if (backendStatusPill) {
+        backendStatusPill.textContent = 'Offline';
+        backendStatusPill.style.color = '#f87171';
+      }
     };
   }
 
@@ -232,6 +287,43 @@
       sendCommand({ action: 'add_fly', archetype: selectedSpawnArchetype });
       addFlyModal.classList.add('hidden');
     });
+
+    // Cloud Backend Configuration Modal
+    if (btnCloudConfig && cloudConfigModal) {
+      btnCloudConfig.addEventListener('click', () => {
+        if (cloudBackendInput) {
+          cloudBackendInput.value = localStorage.getItem('drosophila_backend_url') || '';
+        }
+        cloudConfigModal.classList.remove('hidden');
+      });
+    }
+
+    if (btnCloseCloud && cloudConfigModal) {
+      btnCloseCloud.addEventListener('click', () => {
+        cloudConfigModal.classList.add('hidden');
+      });
+    }
+
+    if (btnResetBackend && cloudConfigModal) {
+      btnResetBackend.addEventListener('click', () => {
+        localStorage.removeItem('drosophila_backend_url');
+        cloudConfigModal.classList.add('hidden');
+        window.location.reload();
+      });
+    }
+
+    if (btnSaveBackend && cloudConfigModal) {
+      btnSaveBackend.addEventListener('click', () => {
+        const val = cloudBackendInput ? cloudBackendInput.value.trim() : '';
+        if (val) {
+          localStorage.setItem('drosophila_backend_url', val.replace(/\/+$/, ''));
+        } else {
+          localStorage.removeItem('drosophila_backend_url');
+        }
+        cloudConfigModal.classList.add('hidden');
+        window.location.reload();
+      });
+    }
 
     // Fullscreen Toggle
     function toggleFullscreen() {

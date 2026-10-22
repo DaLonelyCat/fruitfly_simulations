@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Drosophila Connectome Multi-Agent Simulation | Google DeepMind & Janelia</title>
+  <title>Drosophila 3D Connectome Simulation | Google DeepMind & Janelia</title>
   <link rel="stylesheet" href="/static/style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,12 +11,12 @@
 </head>
 <body>
   <div class="app-layout">
-    <!-- Top Header -->
+    <!-- Top Header Navigation -->
     <header class="top-nav">
       <div class="nav-brand">
-        <div class="brand-badge">CONNECTOME v1.0</div>
-        <h1 class="brand-title">Drosophila Multi-Agent Brain Simulation</h1>
-        <span class="brand-sub">Google DeepMind & Janelia Male CNS Connectome (166,000 Neurons / 125M Synapses)</span>
+        <div class="brand-badge">CONNECTOME v1.0 • 3D SIMULATION</div>
+        <h1 class="brand-title">Drosophila Multi-Agent 3D Brain & Terrarium</h1>
+        <span class="brand-sub">Google DeepMind & Janelia Male Drosophila CNS Connectome (166,000 Neurons / 125M Synapses)</span>
       </div>
 
       <div class="nav-controls">
@@ -32,34 +32,37 @@
         <button id="btn-startle" class="btn btn-warning" title="Trigger Looming Threat in Giant Fiber" aria-label="Trigger Looming Threat in Giant Fiber">
           ⚡ Startle Swarm
         </button>
-        <button id="btn-add-fly" class="btn btn-secondary" title="Add New Fly to Arena" aria-label="Add New Fly to Arena">
+        <button id="btn-add-fly" class="btn btn-secondary" title="Spawn New Fly in 3D Space" aria-label="Spawn New Fly in 3D Space">
           + Add Fly
         </button>
       </div>
     </header>
 
-    <!-- Main Workspace -->
-    <main class="main-content">
-      <!-- Left Panel: Arena & Interaction Tools -->
-      <section class="arena-section">
+    <!-- Main Dual Split-Screen Content -->
+    <main class="main-content-split">
+      <!-- Left Viewport: 3D Behavioral Terrarium -->
+      <section class="viewport-card arena-viewport">
         <div class="panel-header">
           <div class="panel-title-group">
-            <h2 class="panel-heading">Drosophila Behavior Arena</h2>
-            <span class="panel-tag">300mm x 300mm Standard Behavior Chamber</span>
+            <h2 class="panel-heading">3D Behavioral Terrarium</h2>
+            <span class="panel-tag">200mm x 200mm x 100mm Flight Chamber • Interactive 3D Objects & Food</span>
           </div>
           <div class="arena-tools">
-            <button id="tool-select" class="tool-btn active" title="Select and Inspect Fly">Inspect Fly</button>
-            <button id="tool-food" class="tool-btn" title="Click arena to drop banana/yeast food patch">Drop Food</button>
-            <button id="tool-pheromone" class="tool-btn" title="Click arena to spray male cVA pheromone">Spray cVA</button>
+            <button id="tool-select" class="tool-btn active" title="Select and Inspect 3D Fly">Inspect</button>
+            <button id="tool-banana" class="tool-btn" title="Click terrarium to drop ripe banana slice (+Dopamine)">Drop Banana</button>
+            <button id="tool-sugar" class="tool-btn" title="Click terrarium to place crystalline sugar cube (++Dopamine)">Drop Sugar</button>
+            <button id="btn-reset-cam-arena" class="tool-btn" title="Reset Camera View">Reset Cam</button>
           </div>
         </div>
 
-        <div class="canvas-container" id="canvas-wrapper">
-          <canvas id="arena-canvas" width="600" height="600"></canvas>
-          <div id="arena-overlay" class="arena-hint">Click on any fruit fly to inspect its biological connectome brain</div>
+        <!-- 3D Terrarium Three.js Container -->
+        <div class="three-container" id="arena-3d-container">
+          <div class="viewport-overlay-hint">
+            Rotate: Left Click + Drag | Pan: Right Click + Drag | Zoom: Scroll | Click fly to inspect
+          </div>
         </div>
 
-        <!-- Arena Legend & Real-Time Metrics -->
+        <!-- Arena Metrics & Dopamine Tracker -->
         <div class="arena-stats-bar">
           <div class="stat-item">
             <span class="stat-label">Total Flies:</span>
@@ -74,26 +77,30 @@
             <span class="stat-value" id="stat-fight-count">0</span>
           </div>
           <div class="stat-item">
+            <span class="stat-label">Dopamine Surges:</span>
+            <span class="stat-value text-gold" id="stat-dopamine-count">0</span>
+          </div>
+          <div class="stat-item">
             <span class="stat-label">Simulation Step:</span>
             <span class="stat-value" id="stat-step-count">0</span>
           </div>
         </div>
 
-        <!-- Recent Social Events Stream -->
+        <!-- Live Social Interaction Log -->
         <div class="events-ticker-container">
-          <div class="ticker-title">Live Social Interaction Log:</div>
+          <div class="ticker-title">Live Social & Dopamine Events:</div>
           <div class="events-ticker" id="events-ticker">
-            <div class="ticker-item placeholder">Awaiting multi-agent social interactions...</div>
+            <div class="ticker-item placeholder">Flies exploring 3D terrarium...</div>
           </div>
         </div>
       </section>
 
-      <!-- Right Panel: Connectome Telemetry & Genetic Lab -->
-      <aside class="brain-section">
+      <!-- Right Viewport: 3D Anatomical Connectome Brain -->
+      <aside class="viewport-card brain-viewport">
         <div class="panel-header">
           <div class="panel-title-group">
-            <h2 class="panel-heading" id="selected-fly-heading">Connectome Brain Inspector: Fly #1 (Romeo)</h2>
-            <span class="panel-tag" id="selected-fly-gender">Sex: Male | Biological Circuit Active</span>
+            <h2 class="panel-heading" id="selected-fly-heading">3D Connectome Brain: Fly #1 (Romeo)</h2>
+            <span class="panel-tag" id="selected-fly-gender">Sex: Male • Real Synaptic Wiring Active</span>
           </div>
           <div class="fly-selector-wrapper">
             <label for="fly-select-dropdown">Select Fly:</label>
@@ -101,60 +108,74 @@
           </div>
         </div>
 
-        <!-- Live Fly Mind / Neuro-Symbolic Thought Stream -->
+        <!-- Neuro-Symbolic Thought Stream (Fly Mind) -->
         <div class="thought-bubble-card">
           <div class="thought-header">
             <span class="thought-icon">🧠</span>
-            <span class="thought-label">Internal Monologue (Neuro-Symbolic Readout):</span>
+            <span class="thought-label">Neuro-Symbolic Thought Stream (Fly Mind):</span>
+            <span class="dopamine-badge" id="dopamine-badge">DA: 0.85</span>
           </div>
           <div class="thought-text" id="fly-thought-text">
-            Initializing connectome dynamics...
+            Initializing 3D connectome dynamics...
           </div>
         </div>
 
-        <!-- Tabbed Telemetry Views -->
+        <!-- Tabbed Brain Views -->
         <div class="tabs-nav">
-          <button class="tab-btn active" data-tab="tab-circuit">Connectome Circuit</button>
+          <button class="tab-btn active" data-tab="tab-3d-brain">3D Anatomical Brain</button>
+          <button class="tab-btn" data-tab="tab-circuit">2D Synapse Circuit</button>
           <button class="tab-btn" data-tab="tab-compass">Compass (CX EPG)</button>
-          <button class="tab-btn" data-tab="tab-neurochemistry">Neurogenetics & Mutant Lab</button>
-          <button class="tab-btn" data-tab="tab-social">Dominance & Social Network</button>
+          <button class="tab-btn" data-tab="tab-neurochemistry">Mutant Lab & Dopamine</button>
+          <button class="tab-btn" data-tab="tab-social">Dominance Leaderboard</button>
         </div>
 
-        <!-- Tab 1: Connectome Neural Graph & Firing Rates -->
-        <div class="tab-content active" id="tab-circuit">
-          <div class="circuit-container">
-            <canvas id="circuit-canvas" width="460" height="320"></canvas>
+        <!-- Tab 1: 3D Anatomical Brain (DeepMind Reference) -->
+        <div class="tab-content active" id="tab-3d-brain">
+          <div class="three-container brain-3d-box" id="brain-3d-container">
+            <div class="brain-labels-overlay">
+              <span class="anat-tag tag-cyan">Optic Lobes</span>
+              <span class="anat-tag tag-violet">Mushroom Body</span>
+              <span class="anat-tag tag-gold">PAM Dopamine</span>
+              <span class="anat-tag tag-magenta">P1 Courtship</span>
+              <span class="anat-tag tag-teal">Cervical Neck Tract</span>
+              <span class="anat-tag tag-emerald">VNC Ganglia</span>
+            </div>
           </div>
-
           <div class="firing-rates-grid" id="firing-rates-container">
             <!-- Dynamically populated population bars -->
           </div>
         </div>
 
-        <!-- Tab 2: Ring Attractor Head Direction Compass -->
+        <!-- Tab 2: 2D Synaptic Circuit Diagram -->
+        <div class="tab-content" id="tab-circuit">
+          <div class="circuit-container">
+            <canvas id="circuit-canvas" width="460" height="300"></canvas>
+          </div>
+        </div>
+
+        <!-- Tab 3: Ring Attractor Head Direction Compass -->
         <div class="tab-content" id="tab-compass">
           <div class="compass-layout">
             <div class="compass-dial-box">
-              <canvas id="compass-canvas" width="220" height="220"></canvas>
+              <canvas id="compass-canvas" width="180" height="180"></canvas>
               <div class="compass-heading-label">
-                Internal Heading: <span id="compass-heading-val">0.0 deg</span>
+                Heading: <span id="compass-heading-val">0.0 deg</span>
               </div>
             </div>
             <div class="compass-info">
-              <h3 class="sub-heading">Central Complex (CX) Ring Attractor</h3>
+              <h3 class="sub-heading">Central Complex (CX) Compass</h3>
               <p class="body-text">
-                The Ellipsoid Body (EPG) and Protocerebral Bridge (PEN) form an 8-wedge biological compass.
-                The activity bump represents the fly's internal azimuth heading, updated by angular velocity descending feedback and visual landmark cues.
+                The Ellipsoid Body (EPG) ring attractor maintains an internal 360-degree heading bump in 3D space, updated by angular velocity descending commands and visual cues.
               </p>
               <div class="wedge-bars" id="wedge-bars-container"></div>
             </div>
           </div>
         </div>
 
-        <!-- Tab 3: Neurochemical Tone & Genetics Laboratory -->
+        <!-- Tab 4: Neurogenetics & Dopamine Sliders -->
         <div class="tab-content" id="tab-neurochemistry">
           <div class="mutant-presets">
-            <span class="preset-label">Genetic Mutants & Optogenetic Overexpression:</span>
+            <span class="preset-label">Genetic Mutants & Optogenetic Clamps:</span>
             <div class="preset-btn-row">
               <button class="preset-btn" data-mutant="fru_null" title="Abolish Courtship Song and Pursuit">fru-null (Courtship Blind)</button>
               <button class="preset-btn" data-mutant="hyper_octopamine" title="Elevate Aggressive Lunging">Hyper-Octopamine (Brawler)</button>
@@ -165,13 +186,13 @@
           </div>
 
           <div class="sliders-card">
-            <h3 class="sub-heading">Individualized Neuromodulatory Profile</h3>
+            <h3 class="sub-heading">Individualized Neuromodulatory Tone</h3>
             
             <div class="slider-group">
               <div class="slider-header">
                 <span class="slider-name">Dopamine (DA):</span>
-                <span class="slider-desc">Exploratory locomotion, courtship arousal, PAM reward gain</span>
-                <span class="slider-display" id="val-da">0.85</span>
+                <span class="slider-desc">Reinforced by eating sugar/banana; elevates arousal & exploration</span>
+                <span class="slider-display text-gold" id="val-da">0.85</span>
               </div>
               <input type="range" class="neuro-slider" id="slider-da" min="0.0" max="1.0" step="0.05" value="0.85">
             </div>
@@ -206,7 +227,7 @@
             <div class="slider-group">
               <div class="slider-header">
                 <span class="slider-name">Fear / Startle Sensitivity:</span>
-                <span class="slider-desc">LC4 looming gain to Giant Fiber escape reflex</span>
+                <span class="slider-desc">LC4 looming gain to Giant Fiber 3D escape flight</span>
                 <span class="slider-display" id="val-fear">0.20</span>
               </div>
               <input type="range" class="neuro-slider" id="slider-fear" min="0.0" max="1.0" step="0.05" value="0.20">
@@ -215,7 +236,7 @@
             <div class="slider-group">
               <div class="slider-header">
                 <span class="slider-name">Hunger (Metabolic State):</span>
-                <span class="slider-desc">Food odor sensitivity and appetitive MBON gain</span>
+                <span class="slider-desc">Appetite for banana/sugar; drives foraging navigation</span>
                 <span class="slider-display" id="val-hunger">0.30</span>
               </div>
               <input type="range" class="neuro-slider" id="slider-hunger" min="0.0" max="1.0" step="0.05" value="0.30">
@@ -223,7 +244,7 @@
           </div>
         </div>
 
-        <!-- Tab 4: Dominance & Social Network -->
+        <!-- Tab 5: Dominance & Social Leaderboard -->
         <div class="tab-content" id="tab-social">
           <div class="social-summary-grid">
             <div class="summary-card">
@@ -231,11 +252,10 @@
               <div id="leaderboard-container" class="leaderboard-list"></div>
             </div>
             <div class="summary-card">
-              <div class="card-title">Selected Fly Social Record</div>
+              <div class="card-title">Selected Fly Social & Dopamine Record</div>
               <div id="selected-fly-stats" class="stats-list"></div>
             </div>
           </div>
-
           <div class="social-graph-card">
             <div class="card-title">Conspecific Interaction Matrix</div>
             <div id="interaction-matrix-view" class="matrix-list"></div>
@@ -244,24 +264,27 @@
       </aside>
     </main>
 
-    <!-- Modal for Adding New Fly -->
+    <!-- Modal for Spawning New 3D Fly -->
     <div id="add-fly-modal" class="modal-backdrop hidden">
       <div class="modal-card">
-        <h3 class="modal-heading">Spawn New Fruit Fly Agent</h3>
-        <p class="modal-desc">Select a biological personality archetype or create a custom genetic variant.</p>
+        <h3 class="modal-heading">Spawn New 3D Fruit Fly Agent</h3>
+        <p class="modal-desc">Select a biological personality archetype to drop into the 3D terrarium.</p>
         
-        <div class="archetype-grid" id="archetype-selection-grid">
-          <!-- Populated by JS -->
-        </div>
+        <div class="archetype-grid" id="archetype-selection-grid"></div>
 
         <div class="modal-actions">
           <button id="btn-cancel-spawn" class="btn btn-secondary">Cancel</button>
-          <button id="btn-confirm-spawn" class="btn btn-primary">Spawn in Arena</button>
+          <button id="btn-confirm-spawn" class="btn btn-primary">Spawn in Terrarium</button>
         </div>
       </div>
     </div>
   </div>
 
+  <!-- Three.js & Application Bundles -->
+  <script src="/static/lib/three.min.js"></script>
+  <script src="/static/lib/OrbitControls.js"></script>
+  <script src="/static/brain_3d_view.js"></script>
+  <script src="/static/arena_3d_view.js"></script>
   <script src="/static/brain_visualizer.js"></script>
   <script src="/static/app.js"></script>
 </body>

@@ -1,14 +1,12 @@
 /**
- * Master Application Controller & Arena Renderer
- * Connects WebSocket, renders Drosophila multi-agent kinematics, and synchronizes telemetry.
+ * Master Application Controller for 3D Drosophila Connectome Simulation
+ * Synchronizes 3D Behavioral Terrarium, 3D Connectome Brain, and Dopamine Reward System.
  */
 
 (function () {
   'use strict';
 
   // DOM Elements
-  const arenaCanvas = document.getElementById('arena-canvas');
-  const arenaCtx = arenaCanvas.getContext('2d');
   const btnPause = document.getElementById('btn-pause');
   const pauseIcon = document.getElementById('pause-icon');
   const pauseText = document.getElementById('pause-text');
@@ -18,12 +16,14 @@
   const btnAddFly = document.getElementById('btn-add-fly');
 
   const toolSelect = document.getElementById('tool-select');
-  const toolFood = document.getElementById('tool-food');
-  const toolPheromone = document.getElementById('tool-pheromone');
+  const toolBanana = document.getElementById('tool-banana');
+  const toolSugar = document.getElementById('tool-sugar');
+  const btnResetCamArena = document.getElementById('btn-reset-cam-arena');
 
   const statFlyCount = document.getElementById('stat-fly-count');
   const statCourtshipCount = document.getElementById('stat-courtship-count');
   const statFightCount = document.getElementById('stat-fight-count');
+  const statDopamineCount = document.getElementById('stat-dopamine-count');
   const statStepCount = document.getElementById('stat-step-count');
   const eventsTicker = document.getElementById('events-ticker');
 
@@ -31,6 +31,7 @@
   const selectedFlyHeading = document.getElementById('selected-fly-heading');
   const selectedFlyGender = document.getElementById('selected-fly-gender');
   const flyThoughtText = document.getElementById('fly-thought-text');
+  const dopamineBadge = document.getElementById('dopamine-badge');
   const firingRatesContainer = document.getElementById('firing-rates-container');
   const compassHeadingVal = document.getElementById('compass-heading-val');
   const wedgeBarsContainer = document.getElementById('wedge-bars-container');
@@ -58,31 +59,39 @@
   let ws = null;
   let currentState = null;
   let selectedFlyId = 1;
-  let activeTool = 'select'; // 'select', 'food', 'pheromone'
-  let brainVisualizer = null;
+  let activeTool = 'select'; // 'select', 'banana', 'sugar'
+  let totalDopamineSurges = 0;
+
+  // Viewport Controllers
+  let arena3D = null;
+  let brain3D = null;
+  let brain2DVisualizer = null;
   let availableArchetypes = {};
   let selectedSpawnArchetype = 'Romeo';
 
-  // Arena Dimensions in Simulation coordinates (300 x 300 mm)
-  const SIM_WIDTH = 300.0;
-  const SIM_HEIGHT = 300.0;
-
   // Initialize
   async function init() {
-    brainVisualizer = new window.BrainVisualizer('circuit-canvas', 'compass-canvas');
+    // 1. Initialize 3D Behavioral Terrarium
+    arena3D = new window.Arena3DView('arena-3d-container');
 
-    // Fetch Connectome Metadata and Archetypes
+    // 2. Initialize 3D Connectome Brain Viewer (DeepMind reconstruction)
+    brain3D = new window.Brain3DView('brain-3d-container');
+
+    // 3. Initialize 2D fallback circuit diagram & compass
+    brain2DVisualizer = new window.BrainVisualizer('circuit-canvas', 'compass-canvas');
+
+    // 4. Fetch metadata
     try {
       const connRes = await fetch('/api/connectome');
       const connData = await connRes.json();
-      brainVisualizer.setConnectomeData(connData);
+      brain2DVisualizer.setConnectomeData(connData);
       initPopulationBars(connData.subcircuit.populations);
 
       const archRes = await fetch('/api/archetypes');
       availableArchetypes = await archRes.json();
       renderArchetypeGrid();
     } catch (err) {
-      console.warn('REST fallback initialization notice:', err);
+      console.warn('Metadata fetch notice:', err);
     }
 
     initWedgeBars();
@@ -151,7 +160,7 @@
     ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
-      console.log('Connectome WebSocket connected.');
+      console.log('Connectome 3D WebSocket connected.');
     };
 
     ws.onmessage = (event) => {
@@ -160,7 +169,7 @@
     };
 
     ws.onclose = () => {
-      console.log('WebSocket disconnected. Retrying in 1.5s...');
+      console.log('WebSocket disconnected. Reconnecting in 1.5s...');
       setTimeout(connectWebSocket, 1500);
     };
 
@@ -208,38 +217,30 @@
       addFlyModal.classList.add('hidden');
     });
 
-    // Tools
+    // 3D Tools
     toolSelect.addEventListener('click', () => setTool('select'));
-    toolFood.addEventListener('click', () => setTool('food'));
-    toolPheromone.addEventListener('click', () => setTool('pheromone'));
+    toolBanana.addEventListener('click', () => setTool('banana'));
+    toolSugar.addEventListener('click', () => setTool('sugar'));
 
-    // Canvas Clicks
-    arenaCanvas.addEventListener('click', (e) => {
-      const rect = arenaCanvas.getBoundingClientRect();
-      const clickX = ((e.clientX - rect.left) / rect.width) * SIM_WIDTH;
-      const clickY = ((e.clientY - rect.top) / rect.height) * SIM_HEIGHT;
+    btnResetCamArena.addEventListener('click', () => {
+      if (arena3D && arena3D.camera && arena3D.controls) {
+        arena3D.camera.position.set(100, -140, 160);
+        arena3D.controls.target.set(100, 100, 25);
+        arena3D.controls.update();
+      }
+    });
 
-      if (activeTool === 'select') {
-        // Find nearest fly
-        if (currentState && currentState.flies) {
-          let nearest = null;
-          let minDist = 25.0; // max click radius in mm
-          for (const fly of currentState.flies) {
-            const d = Math.hypot(fly.x - clickX, fly.y - clickY);
-            if (d < minDist) {
-              minDist = d;
-              nearest = fly;
-            }
-          }
-          if (nearest) {
-            selectedFlyId = nearest.id;
-            sendCommand({ action: 'select_fly', fly_id: nearest.id });
-          }
-        }
-      } else if (activeTool === 'food') {
-        sendCommand({ action: 'add_food', x: clickX, y: clickY });
-      } else if (activeTool === 'pheromone') {
-        sendCommand({ action: 'add_pheromone', x: clickX, y: clickY, amount: 0.8 });
+    // 3D Terrarium Custom Events
+    window.addEventListener('select-fly-3d', (e) => {
+      selectedFlyId = e.detail.flyId;
+      sendCommand({ action: 'select_fly', fly_id: selectedFlyId });
+    });
+
+    window.addEventListener('floor-click-3d', (e) => {
+      if (activeTool === 'banana') {
+        sendCommand({ action: 'add_food', x: e.detail.x, y: e.detail.y, z: e.detail.z, food_type: 'banana_slice' });
+      } else if (activeTool === 'sugar') {
+        sendCommand({ action: 'add_food', x: e.detail.x, y: e.detail.y, z: e.detail.z, food_type: 'sugar_cube' });
       }
     });
 
@@ -259,7 +260,7 @@
       });
     });
 
-    // Neurochemical Sliders
+    // Sliders
     const sliders = [
       { el: sliderDa, valEl: valDa, key: 'dopamine' },
       { el: sliderOa, valEl: valOa, key: 'octopamine' },
@@ -281,14 +282,13 @@
       });
     });
 
-    // Genetic Mutant Presets
+    // Presets
     document.querySelectorAll('.preset-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
-        const mutant = btn.dataset.mutant;
         sendCommand({
           action: 'gene_knockout',
           fly_id: selectedFlyId,
-          gene: mutant
+          gene: btn.dataset.mutant
         });
       });
     });
@@ -297,17 +297,23 @@
   function setTool(toolName) {
     activeTool = toolName;
     toolSelect.classList.toggle('active', toolName === 'select');
-    toolFood.classList.toggle('active', toolName === 'food');
-    toolPheromone.classList.toggle('active', toolName === 'pheromone');
+    toolBanana.classList.toggle('active', toolName === 'banana');
+    toolSugar.classList.toggle('active', toolName === 'sugar');
   }
 
-  // Update DOM from Simulation State
+  // Update UI & Telemetry
   function updateUI() {
     if (!currentState) return;
 
-    // Header stats
+    // Pass state to 3D Terrarium
+    if (arena3D) {
+      arena3D.updateState(currentState);
+    }
+
+    // Top metrics
     statFlyCount.textContent = currentState.flies.length;
     statStepCount.textContent = currentState.step;
+
     if (currentState.environment) {
       statCourtshipCount.textContent = currentState.environment.total_courtships || 0;
       statFightCount.textContent = currentState.environment.total_fights || 0;
@@ -315,7 +321,7 @@
       updateSocialMatrix(currentState.environment.interaction_pairs || {});
     }
 
-    // Pause state
+    // Pause button state
     if (currentState.paused) {
       pauseIcon.textContent = '▶';
       pauseText.textContent = 'Resume';
@@ -324,24 +330,38 @@
       pauseText.textContent = 'Pause';
     }
 
-    // Populate / Sync Fly Dropdown
     syncFlyDropdown(currentState.flies);
 
     // Selected Fly Telemetry
     const selFly = currentState.flies.find((f) => f.id === selectedFlyId) || currentState.flies[0];
     if (selFly) {
       selectedFlyId = selFly.id;
-      selectedFlyHeading.textContent = `Connectome Brain Inspector: Fly #${selFly.id} (${selFly.archetype})`;
+      selectedFlyHeading.textContent = `3D Connectome Brain: Fly #${selFly.id} (${selFly.archetype})`;
       selectedFlyHeading.style.color = selFly.color;
-      selectedFlyGender.textContent = `Sex: ${selFly.gender.toUpperCase()} | Speed: ${selFly.speed.toFixed(1)} mm/s | Action: ${selFly.action.toUpperCase()}`;
+      selectedFlyGender.textContent = `Sex: ${selFly.gender.toUpperCase()} • Position: (${selFly.x.toFixed(0)}, ${selFly.y.toFixed(0)}, ${selFly.z.toFixed(0)}mm) • Action: ${selFly.action.toUpperCase()}`;
+
+      // Dopamine level badge
+      dopamineBadge.textContent = `DA: ${selFly.dopamine.toFixed(2)}`;
+
+      if (selFly.dopamine_surge) {
+        totalDopamineSurges += 1;
+        statDopamineCount.textContent = totalDopamineSurges;
+      }
 
       const telem = selFly.telemetry;
       if (telem) {
         flyThoughtText.textContent = `"${telem.last_thought}"`;
         compassHeadingVal.textContent = `${telem.internal_heading_deg} deg`;
 
-        // Update Brain Visualizer
-        brainVisualizer.updateTelemetry(telem);
+        // Update 3D Connectome Brain Viewer (DeepMind Reconstruction)
+        if (brain3D) {
+          brain3D.updateTelemetry(telem);
+        }
+
+        // Update 2D fallback visualizer
+        if (brain2DVisualizer) {
+          brain2DVisualizer.updateTelemetry(telem);
+        }
 
         // Update Population Firing Rate Bars
         const rates = telem.firing_rates || {};
@@ -363,7 +383,7 @@
           }
         });
 
-        // Sync Sliders if not currently dragging
+        // Sync Sliders if not dragging
         if (!document.activeElement.classList.contains('neuro-slider')) {
           const p = telem.personality || {};
           if (p.dopamine !== undefined) {
@@ -392,7 +412,6 @@
           }
         }
 
-        // Leaderboard & stats
         updateLeaderboard(currentState.flies, selFly);
       }
     }
@@ -436,7 +455,7 @@
       row.className = 'leader-item';
       row.innerHTML = `
         <span><span class="leader-rank">#${idx + 1}</span> Fly #${f.id} (${f.archetype})</span>
-        <span>${f.fights_won || 0} wins</span>
+        <span>${f.fights_won || 0} wins • DA: ${f.dopamine.toFixed(2)}</span>
       `;
       lbContainer.appendChild(row);
     });
@@ -445,6 +464,7 @@
     statsList.innerHTML = `
       <div class="leader-item"><span>Archetype:</span><span>${selFly.archetype} (${selFly.gender})</span></div>
       <div class="leader-item"><span>Current Satiety:</span><span>${Math.round(selFly.satiety * 100)}%</span></div>
+      <div class="leader-item"><span>Dopamine (DA):</span><span class="text-gold">${selFly.dopamine.toFixed(2)}</span></div>
       <div class="leader-item"><span>Courtship Bouts:</span><span>${selFly.courtship_bouts || 0}</span></div>
       <div class="leader-item"><span>Fights Won:</span><span>${selFly.fights_won || 0}</span></div>
     `;
@@ -455,7 +475,7 @@
     container.innerHTML = '';
     const entries = Object.entries(pairs);
     if (entries.length === 0) {
-      container.innerHTML = '<span style="color:#627896;font-size:11px;">No social contacts recorded yet.</span>';
+      container.innerHTML = '<span style="color:#64748b;font-size:10px;">No social contacts recorded yet.</span>';
       return;
     }
     entries.forEach(([pair, count]) => {
@@ -466,260 +486,13 @@
     });
   }
 
-  // ==========================================================================
-  // Render Loop: High-Performance Arena Drawing
-  // ==========================================================================
-
+  // Render Loop
   function renderLoop() {
-    renderArena();
-    brainVisualizer.render();
+    if (arena3D) arena3D.render();
+    if (brain3D) brain3D.render();
+    if (brain2DVisualizer) brain2DVisualizer.render();
     requestAnimationFrame(renderLoop);
   }
 
-  function renderArena() {
-    const ctx = arenaCtx;
-    const w = arenaCanvas.width;
-    const h = arenaCanvas.height;
-
-    // Scale from Simulation Coordinates (0-300) to Canvas Pixels (0-600)
-    const sx = w / SIM_WIDTH;
-    const sy = h / SIM_HEIGHT;
-
-    // Clear background
-    ctx.fillStyle = '#060a12';
-    ctx.fillRect(0, 0, w, h);
-
-    // Subtle arena grid
-    ctx.strokeStyle = '#0e1624';
-    ctx.lineWidth = 1;
-    const gridStep = 30 * sx;
-    for (let x = gridStep; x < w; x += gridStep) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, h);
-      ctx.stroke();
-    }
-    for (let y = gridStep; y < h; y += gridStep) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(w, y);
-      ctx.stroke();
-    }
-
-    if (!currentState) return;
-
-    // 1. Draw Food Patches with Odor Plumes
-    if (currentState.environment && currentState.environment.food_patches) {
-      currentState.environment.food_patches.forEach((fp) => {
-        if (fp.amount <= 0) return;
-        const fx = fp.x * sx;
-        const fy = fp.y * sy;
-        const fr = fp.radius * sx;
-
-        // Odor diffusion halo
-        const haloGrad = ctx.createRadialGradient(fx, fy, fr * 0.5, fx, fy, fr * 3.2);
-        haloGrad.addColorStop(0, 'rgba(255, 204, 0, 0.18)');
-        haloGrad.addColorStop(1, 'rgba(255, 204, 0, 0.0)');
-        ctx.beginPath();
-        ctx.arc(fx, fy, fr * 3.2, 0, 2 * Math.PI);
-        ctx.fillStyle = haloGrad;
-        ctx.fill();
-
-        // Food core (fermenting yeast drop)
-        ctx.beginPath();
-        ctx.arc(fx, fy, fr, 0, 2 * Math.PI);
-        ctx.fillStyle = '#d49b00';
-        ctx.fill();
-        ctx.strokeStyle = '#ffdd44';
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-
-        // Food label
-        ctx.font = '10px "JetBrains Mono", monospace';
-        ctx.fillStyle = '#ffe066';
-        ctx.textAlign = 'center';
-        ctx.fillText(`Food (${Math.round(fp.amount)}%)`, fx, fy - fr - 4);
-      });
-    }
-
-    // 2. Draw Acoustic Courtship Song Waves
-    if (currentState.environment && currentState.environment.acoustic_waves) {
-      currentState.environment.acoustic_waves.forEach((wave) => {
-        const wx = wave.x * sx;
-        const wy = wave.y * sy;
-        const wr = wave.radius * sx;
-        const alpha = Math.min(1.0, wave.intensity);
-
-        ctx.beginPath();
-        ctx.arc(wx, wy, wr, 0, 2 * Math.PI);
-        ctx.strokeStyle = `rgba(255, 51, 102, ${alpha * 0.6})`;
-        ctx.lineWidth = 2.0;
-        ctx.stroke();
-      });
-    }
-
-    // 3. Draw Fruit Flies
-    if (currentState.flies) {
-      currentState.flies.forEach((fly) => {
-        drawFruitFly(ctx, fly, sx, sy, fly.id === selectedFlyId);
-      });
-    }
-  }
-
-  function drawFruitFly(ctx, fly, sx, sy, isSelected) {
-    const cx = fly.x * sx;
-    const cy = fly.y * sy;
-    const heading = fly.heading;
-
-    ctx.save();
-    ctx.translate(cx, cy);
-    ctx.rotate(heading);
-
-    // Selection Halo
-    if (isSelected) {
-      ctx.beginPath();
-      ctx.arc(0, 0, 18, 0, 2 * Math.PI);
-      ctx.strokeStyle = '#00d2ff';
-      ctx.lineWidth = 1.8;
-      ctx.setLineDash([3, 3]);
-      ctx.stroke();
-      ctx.setLineDash([]);
-    }
-
-    // Aggression Aura (during lunge)
-    if (fly.action === 'lunging') {
-      ctx.beginPath();
-      ctx.arc(0, 0, 22, 0, 2 * Math.PI);
-      ctx.fillStyle = 'rgba(255, 85, 0, 0.25)';
-      ctx.fill();
-    }
-
-    // Leg Gait (6 articulated legs with alternating tripod phase)
-    ctx.strokeStyle = '#3a4a5e';
-    ctx.lineWidth = 1.2;
-    const phase = fly.tripod_phase || 0;
-
-    // 3 Leg Pairs: Front, Mid, Hind
-    const legOffsets = [-4, 0, 4];
-    legOffsets.forEach((lx, idx) => {
-      const legPhase = phase + (idx % 2 === 0 ? 0 : Math.PI);
-      const legSpread = Math.sin(legPhase) * 3.5;
-
-      // Left leg
-      ctx.beginPath();
-      ctx.moveTo(lx, -3);
-      ctx.lineTo(lx - 4, -8 - legSpread);
-      ctx.lineTo(lx - 2, -13 - legSpread);
-      ctx.stroke();
-
-      // Right leg
-      ctx.beginPath();
-      ctx.moveTo(lx, 3);
-      ctx.lineTo(lx - 4, 8 + legSpread);
-      ctx.lineTo(lx - 2, 13 + legSpread);
-      ctx.stroke();
-    });
-
-    // Wings (Translucent with biological veins)
-    // Wing extension angles in radians
-    const leftWingRad = (fly.wing_left_angle * Math.PI) / 180;
-    const rightWingRad = (fly.wing_right_angle * Math.PI) / 180;
-
-    // Left Wing
-    ctx.save();
-    ctx.translate(-2, -2);
-    ctx.rotate(-leftWingRad);
-    ctx.beginPath();
-    ctx.ellipse(-10, -2, 12, 4, -0.15, 0, 2 * Math.PI);
-    ctx.fillStyle = fly.is_singing && fly.singing_wing === 'left' ? 'rgba(255, 100, 150, 0.65)' : 'rgba(200, 225, 255, 0.35)';
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-    ctx.lineWidth = 0.8;
-    ctx.stroke();
-    ctx.restore();
-
-    // Right Wing
-    ctx.save();
-    ctx.translate(-2, 2);
-    ctx.rotate(rightWingRad);
-    ctx.beginPath();
-    ctx.ellipse(-10, 2, 12, 4, 0.15, 0, 2 * Math.PI);
-    ctx.fillStyle = fly.is_singing && fly.singing_wing === 'right' ? 'rgba(255, 100, 150, 0.65)' : 'rgba(200, 225, 255, 0.35)';
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-    ctx.lineWidth = 0.8;
-    ctx.stroke();
-    ctx.restore();
-
-    // Body: Abdomen (Segmented, elongated)
-    ctx.beginPath();
-    ctx.ellipse(-7, 0, 8, 4, 0, 0, 2 * Math.PI);
-    ctx.fillStyle = fly.gender === 'male' ? '#2b2118' : '#3d3020'; // Males have dark pigmentation at abdominal tip
-    ctx.fill();
-    ctx.strokeStyle = '#1a140e';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-
-    // Abdominal stripes
-    ctx.strokeStyle = 'rgba(255, 200, 100, 0.3)';
-    for (let s = -12; s <= -4; s += 2.5) {
-      ctx.beginPath();
-      ctx.moveTo(s, -3);
-      ctx.lineTo(s, 3);
-      ctx.stroke();
-    }
-
-    // Thorax (Color coded by archetype)
-    ctx.beginPath();
-    ctx.ellipse(0, 0, 5, 3.5, 0, 0, 2 * Math.PI);
-    ctx.fillStyle = fly.color || '#445566';
-    ctx.fill();
-    ctx.strokeStyle = '#223344';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-
-    // Head
-    ctx.beginPath();
-    ctx.ellipse(6, 0, 3.5, 3, 0, 0, 2 * Math.PI);
-    ctx.fillStyle = '#4a3b2c';
-    ctx.fill();
-
-    // Compound Red Eyes (Left & Right)
-    ctx.beginPath();
-    ctx.arc(6, -2.5, 1.6, 0, 2 * Math.PI);
-    ctx.arc(6, 2.5, 1.6, 0, 2 * Math.PI);
-    ctx.fillStyle = '#cc1122'; // Drosophila brick red eyes
-    ctx.fill();
-
-    // Antennae (Twitching sensory receptors)
-    ctx.strokeStyle = '#888';
-    ctx.lineWidth = 0.8;
-    ctx.beginPath();
-    ctx.moveTo(8.5, -1);
-    ctx.lineTo(12, -2.5);
-    ctx.moveTo(8.5, 1);
-    ctx.lineTo(12, 2.5);
-    ctx.stroke();
-
-    // Proboscis (Extended when feeding)
-    if (fly.proboscis > 0.1) {
-      ctx.beginPath();
-      ctx.moveTo(8, 0);
-      ctx.lineTo(8 + fly.proboscis * 5, 0);
-      ctx.strokeStyle = '#ffaa44';
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-    }
-
-    ctx.restore();
-
-    // Label above fly
-    ctx.font = '10px "JetBrains Mono", monospace';
-    ctx.fillStyle = isSelected ? '#00d2ff' : '#9cb2cd';
-    ctx.textAlign = 'center';
-    ctx.fillText(`${fly.archetype} (#${fly.id})`, cx, cy - 18);
-  }
-
-  // Start Application
   window.addEventListener('DOMContentLoaded', init);
 })();

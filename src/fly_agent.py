@@ -5,9 +5,12 @@ from src.connectome_brain import ConnectomeBrain
 
 class FruitFlyAgent:
     """
-    Simulated Drosophila melanogaster agent powered by the ConnectomeBrain.
-    Models physical biomechanics, wing articulation, tripod walking gait,
-    sensory receptive fields, and social behavioral states.
+    3D Articulated Drosophila melanogaster Agent.
+    Simulates:
+    - 3D physical kinematics (walking on ground/perches, taking off into 3D flight, banking turns).
+    - 3D articulated body state: head, compound eyes, antennae, 6 legs (tripod gait), wings, proboscis.
+    - Closed-loop Connectome Brain integration.
+    - Dopamine Reward System: Ingesting sugar/banana stimulates the PAM dopaminergic cluster.
     """
 
     ARCHETYPES = {
@@ -29,14 +32,14 @@ class FruitFlyAgent:
             "name": "Glutton",
             "gender": "male",
             "color": "#ffcc00",  # honey gold
-            "description": "Voracious forager. High hunger & appetitive MBON; monopolizes yeast/banana drops.",
+            "description": "Voracious forager. High hunger & appetitive MBON; tracks banana/sugar for dopamine.",
             "personality": {"dopamine": 0.65, "octopamine": 0.4, "serotonin": 0.45, "fruitless": 0.15, "fear": 0.25, "hunger": 0.95}
         },
         "Skittish": {
             "name": "Skittish",
             "gender": "male",
-            "color": "#00ccff",  # electric cyan
-            "description": "Neurotic jitterbug. Hyper-sensitive LC4 looming detection; easily startled into escape flight.",
+            "color": "#00d2ff",  # electric cyan
+            "description": "Neurotic jitterbug. Hyper-sensitive LC4 looming detection; easily startled into 3D flight.",
             "personality": {"dopamine": 0.4, "octopamine": 0.2, "serotonin": 0.7, "fruitless": 0.2, "fear": 0.95, "hunger": 0.4}
         },
         "Zen": {
@@ -55,7 +58,7 @@ class FruitFlyAgent:
         }
     }
 
-    def __init__(self, fly_id, archetype_name="Romeo", x=150.0, y=150.0, heading=0.0):
+    def __init__(self, fly_id, archetype_name="Romeo", x=100.0, y=100.0, z=0.0, heading=0.0):
         self.id = fly_id
         archetype = self.ARCHETYPES.get(archetype_name, self.ARCHETYPES["Romeo"])
         self.archetype_name = archetype_name
@@ -63,36 +66,53 @@ class FruitFlyAgent:
         self.color = archetype["color"]
         self.description = archetype["description"]
         
-        # Spatial Position & Kinematics (in mm)
+        # 3D Spatial Position & Kinematics (in mm)
         self.x = float(x)
         self.y = float(y)
-        self.heading = float(heading)  # radians, 0 is rightward, counterclockwise
+        self.z = float(z)
         self.vx = 0.0
         self.vy = 0.0
+        self.vz = 0.0
         self.speed = 0.0
+        
+        # 3D Orientation (radians)
+        self.heading = float(heading)  # yaw (around Z)
+        self.pitch = 0.0               # pitch (around Y)
+        self.roll = 0.0                # roll (around X, banks in flight)
         self.angular_velocity = 0.0
         
-        # Physical Body Dimensions (~2.5mm length, standard adult Drosophila)
-        self.body_length = 3.5  # mm in simulation coordinates
-        self.body_width = 1.6   # mm
+        # Physical Body Dimensions (~2.5mm Drosophila melanogaster)
+        self.body_length = 3.2  # mm
+        self.body_width = 1.5   # mm
+        self.body_height = 1.2  # mm
+        
+        # Locomotion State
+        self.is_airborne = False
+        self.flight_timer = 0
+        self.tripod_phase = random.uniform(0, 2 * math.pi)
+        self.wing_stroke_phase = 0.0
         
         # Articulated Appendages
-        self.tripod_phase = random.uniform(0, 2 * math.pi)
-        self.wing_left_angle = 12.0   # degrees (resting is ~10-15)
+        self.wing_left_angle = 12.0    # resting angle ~12 deg
         self.wing_right_angle = 12.0
         self.is_singing = False
-        self.singing_wing = "right"   # "left" or "right" unilateral extension
+        self.singing_wing = "right"
         self.song_pulse_timer = 0
-        self.proboscis_extended = 0.0 # 0.0 to 1.0
+        self.proboscis_extended = 0.0  # 0.0 to 1.0
+        
+        # Behavioral Action Flags
         self.is_lunging = False
         self.lunge_timer = 0
         self.is_escaping = False
         self.escape_timer = 0
-        self.is_grooming = False
-        self.groom_timer = 0
+        self.last_action_tag = "walking"
         
-        # Metabolic / Satiety State
-        self.satiety = 0.6  # 1.0 = fully fed, 0.0 = starving
+        # Metabolic & Dopamine State
+        self.satiety = 0.6             # 0.0 (starving) to 1.0 (full)
+        self.dopamine_level = float(archetype["personality"].get("dopamine", 0.5))
+        self.dopamine_surge_active = False
+        self.dopamine_surge_timer = 0
+        self.food_eaten_total = 0.0
         
         # Connectome Neural Controller
         self.brain = ConnectomeBrain(personality=archetype["personality"].copy())
@@ -101,15 +121,11 @@ class FruitFlyAgent:
         self.courtship_bouts = 0
         self.fights_initiated = 0
         self.fights_won = 0
-        self.food_eaten = 0.0
         self.current_target_id = None
-        self.last_action_tag = "exploring"
 
     def update_sensors_and_brain(self, env, other_flies, dt_sec=0.016):
-        """
-        Calculates sensory receptive fields in the environment and executes the connectome brain.
-        """
-        # 1. Detect Nearest Fly
+        """Calculates 3D sensory receptive fields and executes the connectome brain."""
+        # 1. 3D Nearest Fly Detection
         nearest_fly = None
         min_dist = 999.0
         rel_angle = 0.0
@@ -120,38 +136,38 @@ class FruitFlyAgent:
                 continue
             dx = other.x - self.x
             dy = other.y - self.y
-            dist = math.hypot(dx, dy)
+            dz = other.z - self.z
+            dist = math.sqrt(dx*dx + dy*dy + dz*dz)
             if dist < min_dist:
                 min_dist = dist
                 nearest_fly = other
-                # Angle to other fly in self coordinate frame
+                # Relative azimuth angle
                 abs_angle = math.atan2(dy, dx)
                 rel_angle = (abs_angle - self.heading + math.pi) % (2 * math.pi) - math.pi
                 
-                # Approaching loom velocity (projection of relative velocity onto distance vector)
+                # Approaching loom velocity
                 rel_vx = other.vx - self.vx
                 rel_vy = other.vy - self.vy
-                # Positive if approaching
-                loom_speed = - (rel_vx * (dx / dist) + rel_vy * (dy / dist))
+                rel_vz = other.vz - self.vz
+                loom_speed = - (rel_vx * (dx / dist) + rel_vy * (dy / dist) + rel_vz * (dz / dist))
                 
-        # 2. Olfactory: Food Odors and Pheromones from Environment Grid
-        food_odor = env.get_food_odor(self.x, self.y)
-        cva_odor = env.get_pheromone_cva(self.x, self.y)
-        food_dist = env.get_nearest_food_dist(self.x, self.y)
+        # 2. 3D Olfactory: Food Odors & cVA Pheromone
+        food_odor = env.get_food_odor_3d(self.x, self.y, self.z)
+        cva_odor = env.get_pheromone_cva_3d(self.x, self.y, self.z)
+        food_dist, nearest_food_patch, food_grad = env.get_nearest_food_3d(self.x, self.y, self.z)
         
         # 3. Contact Chemoreception (Foreleg Tapping)
-        # Occurs if another fly is within 4mm
         chemo_tap = 0.0
         tap_gender = None
-        if nearest_fly and min_dist < 4.5:
+        if nearest_fly and min_dist < 4.2:
             chemo_tap = 1.0
             tap_gender = nearest_fly.gender
             self.current_target_id = nearest_fly.id
         else:
-            self.current_target_id = nearest_fly.id if nearest_fly and min_dist < 25.0 else None
+            self.current_target_id = nearest_fly.id if nearest_fly and min_dist < 30.0 else None
 
-        # 4. Auditory Detection (Near-field particle velocity from singing flies)
-        auditory_song = env.get_acoustic_song(self.x, self.y, exclude_fly_id=self.id)
+        # 4. 3D Auditory Detection (Near-field acoustic song)
+        auditory_song = env.get_acoustic_song_3d(self.x, self.y, self.z)
         
         # 5. Build sensory input dictionary
         sensory = {
@@ -172,46 +188,52 @@ class FruitFlyAgent:
         # 7. Update Central Complex Compass
         self.brain.update_compass(self.heading, self.angular_velocity, dt_sec)
         
-        # Return motor descending commands & target info
-        return motor_commands, nearest_fly, min_dist, rel_angle
+        return motor_commands, nearest_fly, min_dist, rel_angle, food_dist, food_grad
 
-    def apply_physics(self, motor_commands, nearest_fly, min_dist, rel_angle, env, dt_sec=0.016):
+    def apply_physics(self, motor_commands, nearest_fly, min_dist, rel_angle, food_dist, food_grad, env, dt_sec=0.016):
         """
-        Translates descending neural commands into body physics, leg gaits, and wing motions.
+        Translates descending neural commands into 3D body kinematics, flight transitions,
+        wing articulations, and dopamine reward feeding.
         """
-        # A. Emergency Escape (Giant Fiber Activation)
+        # Decay active dopamine surge visual timer
+        if self.dopamine_surge_active:
+            self.dopamine_surge_timer -= 1
+            if self.dopamine_surge_timer <= 0:
+                self.dopamine_surge_active = False
+
+        # A. Emergency Escape (Giant Fiber Activation -> 3D Takeoff)
         if motor_commands["escape"] > 0.22 or self.is_escaping:
             if not self.is_escaping:
                 self.is_escaping = True
-                self.escape_timer = 20  # ~300ms burst
-                # Dart away from threat or jump forward
+                self.is_airborne = True
+                self.escape_timer = 24  # ~350ms burst
+                self.flight_timer = 50   # stay airborne for a few seconds
                 self.heading += random.choice([-1.2, 1.2, math.pi])
+                self.vz = 40.0          # rapid vertical liftoff
                 
             self.escape_timer -= 1
-            escape_speed = 65.0  # mm/s rapid dart
+            escape_speed = 65.0
             self.vx = math.cos(self.heading) * escape_speed
             self.vy = math.sin(self.heading) * escape_speed
             self.last_action_tag = "escaping"
             if self.escape_timer <= 0:
                 self.is_escaping = False
                 
-        # B. Aggressive Lunge (DNg02 strike)
+        # B. Aggressive Lunge (DNg02 Strike)
         elif motor_commands["lunge"] > 0.20 or self.is_lunging:
             if not self.is_lunging:
                 self.is_lunging = True
-                self.lunge_timer = 12  # ~200ms ballistic charge
+                self.lunge_timer = 12
                 self.fights_initiated += 1
-                # Aim directly at target fly
                 if nearest_fly:
-                    self.heading += rel_angle * 0.8
+                    self.heading += rel_angle * 0.85
                     
             self.lunge_timer -= 1
-            lunge_speed = 50.0  # mm/s high-speed ram
+            lunge_speed = 52.0
             self.vx = math.cos(self.heading) * lunge_speed
             self.vy = math.sin(self.heading) * lunge_speed
             self.last_action_tag = "lunging"
             
-            # Strike effect on target fly
             if nearest_fly and min_dist < 4.0:
                 env.record_fight(self, nearest_fly)
                 
@@ -224,112 +246,176 @@ class FruitFlyAgent:
             self.song_pulse_timer += 1
             self.last_action_tag = "courting"
             
-            # Choose wing to extend based on relative angle to target
+            # Unilateral wing extension to 85-90 degrees
             if rel_angle > 0:
                 self.singing_wing = "left"
-                self.wing_left_angle = 85.0 + 8.0 * math.sin(self.song_pulse_timer * 0.9)
+                self.wing_left_angle = 88.0 + 6.0 * math.sin(self.song_pulse_timer * 1.1)
                 self.wing_right_angle = 12.0
             else:
                 self.singing_wing = "right"
-                self.wing_right_angle = 85.0 + 8.0 * math.sin(self.song_pulse_timer * 0.9)
+                self.wing_right_angle = 88.0 + 6.0 * math.sin(self.song_pulse_timer * 1.1)
                 self.wing_left_angle = 12.0
                 
-            # Emit acoustic near-field song pulse in environment
-            env.emit_song(self.x, self.y, intensity=0.85)
+            env.emit_song_3d(self.x, self.y, self.z, intensity=0.9)
             
-            # Follow target fly smoothly
             if nearest_fly:
-                turn_rate = np.clip(rel_angle * 3.5, -5.0, 5.0)
+                turn_rate = np.clip(rel_angle * 4.0, -5.5, 5.5)
                 self.heading += turn_rate * dt_sec
-                # Maintain ~5-8mm courtship distance
+                # Maintain courtship distance
                 if min_dist > 6.0:
                     approach_speed = 18.0
                     self.vx = math.cos(self.heading) * approach_speed
                     self.vy = math.sin(self.heading) * approach_speed
                 else:
-                    self.vx *= 0.7
-                    self.vy *= 0.7
+                    self.vx *= 0.65
+                    self.vy *= 0.65
                     
             if nearest_fly and min_dist < 5.0 and random.random() < 0.05:
                 env.record_courtship(self, nearest_fly)
                 self.courtship_bouts += 1
 
-        # D. Feeding (DN_FEED & Proboscis Extension Reflex)
-        elif motor_commands["feed"] > 0.20 and env.is_on_food(self.x, self.y):
-
-            self.proboscis_extended = min(1.0, self.proboscis_extended + 0.15)
-            self.vx *= 0.5
-            self.vy *= 0.5
+        # D. Feeding & DOPAMINE REWARD Surge (DN_FEED & MB_DAN Activation)
+        elif motor_commands["feed"] > 0.20 and food_dist < 14.0:
+            self.proboscis_extended = min(1.0, self.proboscis_extended + 0.2)
+            self.vx *= 0.4
+            self.vy *= 0.4
+            self.vz *= 0.4
             self.last_action_tag = "feeding"
-            # Consume food & replenish satiety
-            eaten = env.consume_food(self.x, self.y, amount=0.01)
-            self.food_eaten += eaten
-            self.satiety = min(1.0, self.satiety + eaten * 0.5)
-            # Update hunger in brain
-            self.brain.personality["hunger"] = max(0.05, 1.0 - self.satiety)
             
-        # E. Normal Walking / Steering / Foraging (DN_WALK & DN_TURN)
+            # Consume food in 3D and receive Dopamine reward
+            eaten, dopamine_surge, food_label = env.consume_food_3d(self.x, self.y, self.z, max_intake=0.035)
+            if eaten > 0:
+                self.food_eaten_total += eaten
+                self.satiety = min(1.0, self.satiety + eaten * 0.8)
+                
+                # INJECT DOPAMINE INTO BRAIN:
+                # Elevates dopamine level, stimulating PAM dopaminergic cluster (MB_DAN)
+                self.dopamine_level = min(1.0, self.dopamine_level + dopamine_surge)
+                self.brain.personality["dopamine"] = self.dopamine_level
+                self.brain.firing_rates[self.brain.pop_idx["MB_DAN"]] = 0.95
+                
+                # Visual Dopamine Surge flag
+                self.dopamine_surge_active = True
+                self.dopamine_surge_timer = 20  # ~300ms visual particle duration
+                
+                # Update Fly Mind thought
+                self.brain.last_thought = f"Yeast/sugar ({food_label}) consumed! Dopamine surge (+{dopamine_surge:.2f})! PAM cluster radiating reward."
+
+        # E. 3D Locomotion (Walking on surfaces vs 3D Flight)
         else:
             self.is_singing = False
             self.wing_left_angle = 12.0
             self.wing_right_angle = 12.0
             self.proboscis_extended = max(0.0, self.proboscis_extended - 0.1)
             
-            # Steering
-            turn_noise = random.gauss(0, 0.4)
-            # If food odor gradient is present, steer toward it
-            food_grad_angle = env.get_food_gradient_angle(self.x, self.y)
-            if food_grad_angle is not None and self.brain.personality["hunger"] > 0.4:
-                steer_diff = (food_grad_angle - self.heading + math.pi) % (2 * math.pi) - math.pi
-                turn_command = steer_diff * 1.5 + turn_noise
-            else:
-                turn_command = (motor_commands["turn_bias"] - 0.5) * 4.0 + turn_noise
+            # Flight mode management
+            if self.is_airborne:
+                self.flight_timer -= 1
+                self.last_action_tag = "flying"
+                self.wing_stroke_phase = (self.wing_stroke_phase + dt_sec * 45.0) % (2 * math.pi)
                 
-            self.angular_velocity = turn_command
-            self.heading += self.angular_velocity * dt_sec
-            self.heading = (self.heading + 2 * math.pi) % (2 * math.pi)
-            
-            # Walking Speed
-            base_walk = motor_commands["walk"] * 24.0  # mm/s
-            self.vx = math.cos(self.heading) * base_walk
-            self.vy = math.sin(self.heading) * base_walk
-            self.last_action_tag = "walking"
+                # Steer toward food or explore
+                turn_noise = random.gauss(0, 0.3)
+                if food_grad and self.brain.personality["hunger"] > 0.35:
+                    target_yaw = math.atan2(food_grad[1], food_grad[0])
+                    steer_diff = (target_yaw - self.heading + math.pi) % (2 * math.pi) - math.pi
+                    self.angular_velocity = steer_diff * 2.0 + turn_noise
+                    # Adjust altitude toward food Z
+                    self.vz = food_grad[2] * 18.0
+                else:
+                    self.angular_velocity = (motor_commands["turn_bias"] - 0.5) * 4.5 + turn_noise
+                    self.vz += random.uniform(-2.0, 1.8)
+                    
+                self.heading += self.angular_velocity * dt_sec
+                flight_speed = 32.0 * (0.6 + 0.8 * self.dopamine_level)  # dopamine increases flight vigor
+                self.vx = math.cos(self.heading) * flight_speed
+                self.vy = math.sin(self.heading) * flight_speed
+                
+                # Banking roll angle proportional to turn
+                self.roll = np.clip(self.angular_velocity * 0.15, -0.45, 0.45)
+                self.pitch = np.clip(-self.vz * 0.02, -0.35, 0.35)
+                
+                # Land if flight timer expires and near ground or perch
+                if self.flight_timer <= 0 and self.z < 6.0:
+                    self.is_airborne = False
+                    self.z = 0.0
+                    self.vz = 0.0
+                    self.roll = 0.0
+                    self.pitch = 0.0
+            else:
+                # Walking Mode on Ground or Perch
+                self.last_action_tag = "walking"
+                self.roll = 0.0
+                self.pitch = 0.0
+                self.vz = 0.0
+                
+                # Occasional spontaneous takeoff if dopamine (arousal) is high
+                if random.random() < (0.008 * self.dopamine_level):
+                    self.is_airborne = True
+                    self.flight_timer = random.randint(35, 80)
+                    self.vz = 22.0
+                    
+                turn_noise = random.gauss(0, 0.35)
+                if food_grad and self.brain.personality["hunger"] > 0.4:
+                    target_yaw = math.atan2(food_grad[1], food_grad[0])
+                    steer_diff = (target_yaw - self.heading + math.pi) % (2 * math.pi) - math.pi
+                    self.angular_velocity = steer_diff * 1.8 + turn_noise
+                else:
+                    self.angular_velocity = (motor_commands["turn_bias"] - 0.5) * 4.0 + turn_noise
+                    
+                self.heading += self.angular_velocity * dt_sec
+                walk_speed = motor_commands["walk"] * 24.0 * (0.7 + 0.6 * self.dopamine_level)
+                self.vx = math.cos(self.heading) * walk_speed
+                self.vy = math.sin(self.heading) * walk_speed
+                
+                # Tripod Leg Animation
+                if math.hypot(self.vx, self.vy) > 1.0:
+                    self.tripod_phase = (self.tripod_phase + walk_speed * dt_sec * 4.5) % (2 * math.pi)
 
-        # Update Position with Arena Boundary Collisions
+        # Update 3D Coordinates
         self.x += self.vx * dt_sec
         self.y += self.vy * dt_sec
-        self.speed = math.hypot(self.vx, self.vy)
+        self.z += self.vz * dt_sec
+        self.speed = math.sqrt(self.vx*self.vx + self.vy*self.vy + self.vz*self.vz)
         
-        # Leg Tripod Gait Animation
-        if self.speed > 1.0:
-            self.tripod_phase = (self.tripod_phase + self.speed * dt_sec * 4.0) % (2 * math.pi)
-            
-        # Arena Bounds (e.g. 0 to env.width, 0 to env.height)
-        margin = 6.0
+        # 3D Terrarium Boundary Constraints
+        margin = 4.0
+        # X walls
         if self.x < margin:
             self.x = margin
-            self.heading = math.pi - self.heading + random.uniform(-0.3, 0.3)
+            self.heading = math.pi - self.heading + random.uniform(-0.2, 0.2)
         elif self.x > env.width - margin:
             self.x = env.width - margin
-            self.heading = math.pi - self.heading + random.uniform(-0.3, 0.3)
+            self.heading = math.pi - self.heading + random.uniform(-0.2, 0.2)
             
+        # Y walls
         if self.y < margin:
             self.y = margin
-            self.heading = -self.heading + random.uniform(-0.3, 0.3)
-        elif self.y > env.height - margin:
-            self.y = env.height - margin
-            self.heading = -self.heading + random.uniform(-0.3, 0.3)
+            self.heading = -self.heading + random.uniform(-0.2, 0.2)
+        elif self.y > env.depth - margin:
+            self.y = env.depth - margin
+            self.heading = -self.heading + random.uniform(-0.2, 0.2)
             
-        # Male Flies emit cVA Pheromone on Substrate
-        if self.gender == "male":
-            env.deposit_cva(self.x, self.y, amount=0.08)
+        # Floor & Ceiling (Z)
+        if self.z < 0.0:
+            self.z = 0.0
+            self.vz = 0.0
+            if self.is_airborne and self.flight_timer <= 0:
+                self.is_airborne = False
+        elif self.z > env.height - margin:
+            self.z = env.height - margin
+            self.vz = -abs(self.vz) * 0.5
             
-        # Metabolic Satiety Decay
-        self.satiety = max(0.05, self.satiety - 0.0003)
+        # Deposit cVA pheromone on ground/perches if male
+        if self.gender == "male" and not self.is_airborne:
+            env.deposit_cva_3d(self.x, self.y, self.z, amount=0.08)
+            
+        # Metabolic decay
+        self.satiety = max(0.05, self.satiety - 0.00025)
         self.brain.personality["hunger"] = max(0.05, 1.0 - self.satiety)
 
     def to_dict(self):
-        """Serializes fly state for network transmission to frontend."""
+        """Serializes 3D fly state for Three.js network rendering."""
         return {
             "id": self.id,
             "archetype": self.archetype_name,
@@ -337,17 +423,26 @@ class FruitFlyAgent:
             "color": self.color,
             "x": round(self.x, 2),
             "y": round(self.y, 2),
+            "z": round(self.z, 2),
+            "vx": round(self.vx, 2),
+            "vy": round(self.vy, 2),
+            "vz": round(self.vz, 2),
             "heading": round(self.heading, 3),
-            "heading_deg": round(math.degrees(self.heading), 1),
+            "pitch": round(self.pitch, 3),
+            "roll": round(self.roll, 3),
             "speed": round(self.speed, 2),
+            "is_airborne": self.is_airborne,
             "action": self.last_action_tag,
             "is_singing": self.is_singing,
             "singing_wing": self.singing_wing,
             "wing_left_angle": round(self.wing_left_angle, 1),
             "wing_right_angle": round(self.wing_right_angle, 1),
+            "wing_stroke_phase": round(self.wing_stroke_phase, 2),
             "tripod_phase": round(self.tripod_phase, 2),
             "proboscis": round(self.proboscis_extended, 2),
             "satiety": round(self.satiety, 2),
+            "dopamine": round(self.dopamine_level, 2),
+            "dopamine_surge": self.dopamine_surge_active,
             "target_id": self.current_target_id,
             "telemetry": self.brain.get_telemetry()
         }

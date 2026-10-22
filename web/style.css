@@ -1,26 +1,27 @@
 /* ==========================================================================
-   Drosophila Connectome Simulation Stylesheet
+   Drosophila 3D Connectome Simulation Stylesheet
    Artisanal Scientific / Laboratory Theme (Zero Generic AI Slop)
    ========================================================================== */
 
 :root {
-  --bg-core: #090d14;
-  --bg-surface: #101622;
-  --bg-surface-elevated: #162030;
-  --bg-surface-hover: #1c2a3e;
+  --bg-core: #060910;
+  --bg-surface: #0e1420;
+  --bg-surface-elevated: #141c2c;
+  --bg-surface-hover: #1b263b;
   
-  --border-subtle: #202d42;
-  --border-prominent: #2f4362;
+  --border-subtle: #1e2a3e;
+  --border-prominent: #2d3e5b;
   
-  --text-primary: #f0f4f8;
-  --text-secondary: #9cb2cd;
-  --text-muted: #627896;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
   
   --accent-cyan: #00d2ff;
-  --accent-amber: #ffaa00;
+  --accent-amber: #f59e0b;
   --accent-rose: #ff3366;
-  --accent-emerald: #00e676;
-  --accent-violet: #a78bfa;
+  --accent-emerald: #10b981;
+  --accent-violet: #a855f7;
+  --accent-gold: #ffd700;
   
   --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
@@ -47,7 +48,7 @@ body {
 }
 
 /* ==========================================================================
-   Layout Containers
+   Header Navigation
    ========================================================================== */
 
 .app-layout {
@@ -62,7 +63,7 @@ body {
   align-items: center;
   flex-wrap: wrap;
   gap: 16px;
-  padding: 14px 24px;
+  padding: 12px 24px;
   background-color: var(--bg-surface);
   border-bottom: 1px solid var(--border-subtle);
 }
@@ -87,14 +88,13 @@ body {
 }
 
 .brand-title {
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 700;
   color: var(--text-primary);
-  letter-spacing: -0.01em;
 }
 
 .brand-sub {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-muted);
 }
 
@@ -109,29 +109,29 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-secondary);
   background-color: var(--bg-surface-elevated);
-  padding: 6px 12px;
+  padding: 5px 10px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-subtle);
 }
 
 .speed-control input[type="range"] {
-  width: 70px;
+  width: 65px;
   accent-color: var(--accent-cyan);
   cursor: pointer;
 }
 
 #speed-val {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 11px;
   color: var(--accent-cyan);
-  min-width: 30px;
+  min-width: 28px;
 }
 
 /* ==========================================================================
-   Buttons & Interactive Elements
+   Buttons
    ========================================================================== */
 
 .btn {
@@ -139,10 +139,10 @@ body {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  min-height: 40px;
-  padding: 8px 16px;
+  min-height: 38px;
+  padding: 6px 14px;
   font-family: var(--font-sans);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   border-radius: var(--radius-sm);
   border: 1px solid transparent;
@@ -179,42 +179,42 @@ body {
 }
 
 .btn-warning {
-  background-color: rgba(255, 170, 0, 0.15);
+  background-color: rgba(245, 158, 11, 0.15);
   color: var(--accent-amber);
-  border-color: rgba(255, 170, 0, 0.4);
+  border-color: rgba(245, 158, 11, 0.4);
 }
 
 .btn-warning:hover {
-  background-color: rgba(255, 170, 0, 0.25);
+  background-color: rgba(245, 158, 11, 0.25);
   border-color: var(--accent-amber);
 }
 
 /* ==========================================================================
-   Main Grid Layout
+   Dual Split-Screen Layout
    ========================================================================== */
 
-.main-content {
+.main-content-split {
   display: grid;
-  grid-template-columns: minmax(400px, 1.25fr) minmax(360px, 1fr);
-  gap: 20px;
-  padding: 20px;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding: 16px;
   flex: 1;
 }
 
-@media (max-width: 1080px) {
-  .main-content {
+@media (max-width: 1100px) {
+  .main-content-split {
     grid-template-columns: 1fr;
   }
 }
 
-.arena-section, .brain-section {
+.viewport-card {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
   background-color: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
-  padding: 18px;
+  padding: 16px;
 }
 
 .panel-header {
@@ -222,7 +222,7 @@ body {
   justify-content: space-between;
   align-items: flex-start;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 10px;
 }
 
 .panel-title-group {
@@ -231,25 +231,26 @@ body {
 }
 
 .panel-heading {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   color: var(--text-primary);
 }
 
 .panel-tag {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-muted);
 }
 
 .arena-tools {
   display: flex;
   gap: 6px;
+  flex-wrap: wrap;
 }
 
 .tool-btn {
-  min-height: 34px;
-  padding: 4px 12px;
-  font-size: 12px;
+  min-height: 32px;
+  padding: 4px 10px;
+  font-size: 11px;
   font-weight: 600;
   background-color: var(--bg-surface-elevated);
   color: var(--text-secondary);
@@ -274,51 +275,75 @@ body {
 }
 
 /* ==========================================================================
-   Canvas & Arena
+   Three.js Containers
    ========================================================================== */
 
-.canvas-container {
+.three-container {
   position: relative;
   width: 100%;
-  aspect-ratio: 1 / 1;
-  max-height: 600px;
-  background-color: #05080e;
+  height: 480px;
+  background-color: #04070d;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
   overflow: hidden;
-  display: flex;
-  justify-content: center;
-  align-items: center;
 }
 
-#arena-canvas {
-  width: 100%;
-  height: 100%;
-  display: block;
-  cursor: crosshair;
+.brain-3d-box {
+  height: 300px;
 }
 
-.arena-hint {
+.viewport-overlay-hint {
   position: absolute;
-  bottom: 12px;
+  bottom: 8px;
   left: 50%;
   transform: translateX(-50%);
-  background-color: rgba(9, 13, 20, 0.85);
+  background-color: rgba(6, 9, 16, 0.85);
   border: 1px solid var(--border-subtle);
   color: var(--text-secondary);
   font-size: 11px;
-  padding: 4px 12px;
+  padding: 3px 10px;
   border-radius: var(--radius-sm);
   pointer-events: none;
   white-space: nowrap;
 }
 
+.brain-labels-overlay {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  pointer-events: none;
+}
+
+.anat-tag {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 2px;
+  background-color: rgba(6, 9, 16, 0.75);
+  border: 1px solid currentColor;
+}
+
+.tag-cyan { color: var(--accent-cyan); }
+.tag-violet { color: var(--accent-violet); }
+.tag-gold { color: var(--accent-gold); }
+.tag-magenta { color: var(--accent-rose); }
+.tag-teal { color: #38bdf8; }
+.tag-emerald { color: var(--accent-emerald); }
+
+/* ==========================================================================
+   Stats & Thought Stream
+   ========================================================================== */
+
 .arena-stats-bar {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(95px, 1fr));
+  gap: 8px;
   background-color: var(--bg-surface-elevated);
-  padding: 10px 14px;
+  padding: 8px 12px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-subtle);
 }
@@ -329,7 +354,7 @@ body {
 }
 
 .stat-label {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -337,9 +362,52 @@ body {
 
 .stat-value {
   font-family: var(--font-mono);
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--accent-cyan);
+}
+
+.text-gold {
+  color: var(--accent-gold) !important;
+}
+
+.thought-bubble-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background-color: #0b111a;
+  border: 1px solid #1e2c40;
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+}
+
+.thought-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent-cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.dopamine-badge {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--accent-gold);
+  background-color: rgba(255, 215, 0, 0.12);
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+}
+
+.thought-text {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-primary);
+  min-height: 32px;
 }
 
 /* ==========================================================================
@@ -349,15 +417,15 @@ body {
 .events-ticker-container {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
   border: 1px solid var(--border-subtle);
-  background-color: #0b111a;
+  background-color: #090e17;
   border-radius: var(--radius-sm);
-  padding: 10px 12px;
+  padding: 8px 10px;
 }
 
 .ticker-title {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
@@ -368,7 +436,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  max-height: 85px;
+  max-height: 75px;
   overflow-y: auto;
   font-family: var(--font-mono);
   font-size: 11px;
@@ -397,40 +465,7 @@ body {
 }
 
 /* ==========================================================================
-   Thought Bubble (Fly Mind)
-   ========================================================================== */
-
-.thought-bubble-card {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  background-color: #0e1724;
-  border: 1px solid #23354f;
-  border-radius: var(--radius-sm);
-  padding: 12px 14px;
-}
-
-.thought-header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--accent-cyan);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.thought-text {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  line-height: 1.4;
-  color: var(--text-primary);
-  min-height: 34px;
-}
-
-/* ==========================================================================
-   Tabs Navigation
+   Tabs Navigation & Firing Rates
    ========================================================================== */
 
 .tabs-nav {
@@ -441,13 +476,13 @@ body {
 }
 
 .tab-btn {
-  padding: 8px 12px;
+  padding: 7px 10px;
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
   color: var(--text-muted);
   font-family: var(--font-sans);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
@@ -469,37 +504,18 @@ body {
 .tab-content {
   display: none;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 .tab-content.active {
   display: flex;
 }
 
-/* ==========================================================================
-   Circuit Canvas & Firing Rates Grid
-   ========================================================================== */
-
-.circuit-container {
-  width: 100%;
-  height: 260px;
-  background-color: #060910;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-}
-
-#circuit-canvas {
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-
 .firing-rates-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-  gap: 8px;
-  max-height: 240px;
+  grid-template-columns: repeat(auto-fill, minmax(115px, 1fr));
+  gap: 6px;
+  max-height: 160px;
   overflow-y: auto;
   padding-right: 4px;
 }
@@ -507,9 +523,9 @@ body {
 .pop-bar-item {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
   background-color: var(--bg-surface-elevated);
-  padding: 6px 8px;
+  padding: 5px 7px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-subtle);
 }
@@ -521,18 +537,12 @@ body {
   font-family: var(--font-mono);
 }
 
-.pop-name {
-  color: var(--text-secondary);
-}
-
-.pop-rate {
-  color: var(--accent-cyan);
-  font-weight: 700;
-}
+.pop-name { color: var(--text-secondary); }
+.pop-rate { color: var(--accent-cyan); font-weight: 700; }
 
 .pop-bar-track {
   width: 100%;
-  height: 5px;
+  height: 4px;
   background-color: #0b111a;
   border-radius: 2px;
   overflow: hidden;
@@ -546,36 +556,30 @@ body {
 }
 
 /* ==========================================================================
-   Compass (Ring Attractor)
+   Compass & Neurochemistry Sliders
    ========================================================================== */
 
 .compass-layout {
   display: grid;
-  grid-template-columns: 200px 1fr;
-  gap: 16px;
+  grid-template-columns: 180px 1fr;
+  gap: 14px;
   align-items: center;
-}
-
-@media (max-width: 600px) {
-  .compass-layout {
-    grid-template-columns: 1fr;
-  }
 }
 
 .compass-dial-box {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   background-color: var(--bg-surface-elevated);
-  padding: 12px;
+  padding: 10px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-subtle);
 }
 
 #compass-canvas {
-  width: 160px;
-  height: 160px;
+  width: 140px;
+  height: 140px;
 }
 
 .compass-heading-label {
@@ -592,25 +596,25 @@ body {
 .compass-info {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .sub-heading {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--text-primary);
 }
 
 .body-text {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-secondary);
   line-height: 1.5;
 }
 
 .wedge-bars {
   display: flex;
-  gap: 4px;
-  margin-top: 8px;
+  gap: 3px;
+  margin-top: 6px;
 }
 
 .wedge-item {
@@ -618,7 +622,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   font-family: var(--font-mono);
   font-size: 9px;
   color: var(--text-muted);
@@ -626,7 +630,7 @@ body {
 
 .wedge-track {
   width: 100%;
-  height: 36px;
+  height: 32px;
   background-color: var(--bg-surface-elevated);
   border: 1px solid var(--border-subtle);
   border-radius: 2px;
@@ -641,18 +645,29 @@ body {
   transition: height 0.1s linear;
 }
 
-/* ==========================================================================
-   Neurogenetics / Sliders
-   ========================================================================== */
+.circuit-container {
+  width: 100%;
+  height: 260px;
+  background-color: #04070d;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+#circuit-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
 
 .mutant-presets {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .preset-label {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
@@ -662,12 +677,12 @@ body {
 .preset-btn-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 5px;
 }
 
 .preset-btn {
-  padding: 5px 10px;
-  font-size: 11px;
+  padding: 4px 8px;
+  font-size: 10px;
   font-weight: 600;
   background-color: var(--bg-surface-elevated);
   color: var(--text-secondary);
@@ -689,9 +704,9 @@ body {
 .sliders-card {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px;
   background-color: var(--bg-surface-elevated);
-  padding: 14px;
+  padding: 12px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-subtle);
 }
@@ -699,14 +714,14 @@ body {
 .slider-group {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .slider-header {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .slider-name {
@@ -715,7 +730,7 @@ body {
 }
 
 .slider-desc {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-muted);
   margin-left: 6px;
   margin-right: auto;
@@ -723,7 +738,7 @@ body {
 
 .slider-display {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--accent-cyan);
 }
@@ -735,44 +750,38 @@ body {
 }
 
 /* ==========================================================================
-   Social & Dominance Tab
+   Social Leaderboard
    ========================================================================== */
 
 .social-summary-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 10px;
 }
 
-@media (max-width: 600px) {
-  .social-summary-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-.summary-card {
+.summary-card, .social-graph-card {
   background-color: var(--bg-surface-elevated);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  padding: 12px;
+  padding: 10px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .card-title {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--text-primary);
   border-bottom: 1px solid var(--border-subtle);
-  padding-bottom: 4px;
+  padding-bottom: 3px;
 }
 
 .leaderboard-list, .stats-list {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  font-size: 12px;
+  gap: 4px;
+  font-size: 11px;
 }
 
 .leader-item {
@@ -787,28 +796,18 @@ body {
   color: var(--accent-amber);
 }
 
-.social-graph-card {
-  background-color: var(--bg-surface-elevated);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
 .matrix-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 5px;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 10px;
 }
 
 .pair-badge {
   background-color: var(--bg-core);
   border: 1px solid var(--border-subtle);
-  padding: 3px 8px;
+  padding: 2px 6px;
   border-radius: var(--radius-sm);
   color: var(--text-secondary);
 }
@@ -820,7 +819,7 @@ body {
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background-color: rgba(5, 8, 14, 0.75);
+  background-color: rgba(4, 7, 13, 0.78);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -835,41 +834,40 @@ body {
   background-color: var(--bg-surface);
   border: 1px solid var(--border-prominent);
   border-radius: var(--radius-md);
-  padding: 24px;
+  padding: 22px;
   width: 90%;
-  max-width: 520px;
+  max-width: 500px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
 .modal-heading {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--text-primary);
 }
 
 .modal-desc {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-secondary);
 }
 
 .archetype-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 8px;
 }
 
 .archetype-card {
   background-color: var(--bg-surface-elevated);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  padding: 10px;
+  padding: 8px;
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  transition: border-color 0.15s ease;
+  gap: 3px;
 }
 
 .archetype-card:hover {
@@ -882,20 +880,20 @@ body {
 }
 
 .archetype-card-title {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--text-primary);
 }
 
 .archetype-card-desc {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-muted);
 }
 
 .modal-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
+  gap: 8px;
 }
 
 .select-input {
@@ -903,8 +901,8 @@ body {
   color: var(--text-primary);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  padding: 4px 8px;
-  font-size: 12px;
+  padding: 3px 6px;
+  font-size: 11px;
   font-family: var(--font-sans);
 }
 

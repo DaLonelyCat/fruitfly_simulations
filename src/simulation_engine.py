@@ -1,42 +1,46 @@
 import time
+import math
 import random
 from src.environment import SimulationEnvironment
 from src.fly_agent import FruitFlyAgent
 
 class FruitFlySimulation:
     """
-    Master Simulation Coordinator for multi-agent Drosophila connectome dynamics.
-    Handles agent spawning, time stepping, event resolution, and telemetry broadcasts.
+    3D Master Simulation Coordinator.
+    Manages 3D Drosophila terrarium physics, connectome multi-agent loop,
+    dopamine reward events, and WebSocket telemetry broadcasts.
     """
 
-    def __init__(self, arena_size=300.0, num_flies=6):
-        self.arena_size = arena_size
-        self.env = SimulationEnvironment(width=arena_size, height=arena_size)
+    def __init__(self, arena_w=200.0, arena_d=200.0, arena_h=100.0, num_flies=6):
+        self.arena_w = arena_w
+        self.arena_d = arena_d
+        self.arena_h = arena_h
+        self.env = SimulationEnvironment(width=arena_w, depth=arena_d, height=arena_h)
         self.flies = []
         self.step_count = 0
         self.is_paused = False
-        self.simulation_speed = 1.0  # multiplier
+        self.simulation_speed = 1.0
         self.selected_fly_id = 1
         
-        # Initialize default flies across all biological archetypes
+        # Initialize default biological archetypes in 3D terrarium
         default_archetypes = ["Romeo", "Brawler", "Glutton", "Skittish", "Zen", "Cleopatra"]
         for i, arch in enumerate(default_archetypes[:num_flies]):
-            # Place in a ring around arena center
-            angle = (2 * 3.14159 * i) / num_flies
-            r = 75.0
-            x = (arena_size / 2.0) + r * random.uniform(0.7, 1.1) * float(math_cos(angle))
-            y = (arena_size / 2.0) + r * random.uniform(0.7, 1.1) * float(math_sin(angle))
-            fly = FruitFlyAgent(fly_id=i + 1, archetype_name=arch, x=x, y=y, heading=angle + 1.57)
+            angle = (2 * math.pi * i) / num_flies
+            r = 50.0
+            x = (arena_w / 2.0) + r * math.cos(angle)
+            y = (arena_d / 2.0) + r * math.sin(angle)
+            z = 0.0  # start on the ground
+            fly = FruitFlyAgent(fly_id=i + 1, archetype_name=arch, x=x, y=y, z=z, heading=angle + 1.57)
             self.flies.append(fly)
 
-    def add_fly(self, archetype_name="Romeo", x=None, y=None):
+    def add_fly(self, archetype_name="Romeo", x=None, y=None, z=0.0):
         new_id = max([f.id for f in self.flies], default=0) + 1
         if x is None:
-            x = random.uniform(40.0, self.arena_size - 40.0)
+            x = random.uniform(30.0, self.arena_w - 30.0)
         if y is None:
-            y = random.uniform(40.0, self.arena_size - 40.0)
-        heading = random.uniform(0, 6.28)
-        fly = FruitFlyAgent(fly_id=new_id, archetype_name=archetype_name, x=x, y=y, heading=heading)
+            y = random.uniform(30.0, self.arena_d - 30.0)
+        heading = random.uniform(0, 2 * math.pi)
+        fly = FruitFlyAgent(fly_id=new_id, archetype_name=archetype_name, x=x, y=y, z=z, heading=heading)
         self.flies.append(fly)
         return fly
 
@@ -55,6 +59,8 @@ class FruitFlySimulation:
         fly = self.get_fly(fly_id)
         if fly:
             fly.brain.set_personality(**personality_updates)
+            if "dopamine" in personality_updates:
+                fly.dopamine_level = float(personality_updates["dopamine"])
             return True
         return False
 
@@ -64,22 +70,22 @@ class FruitFlySimulation:
             
         eff_dt = dt_sec * self.simulation_speed
         
-        # 1. Update sensory inputs and compute connectome brains for all flies
+        # 1. Update 3D sensors and compute connectome brains
         decisions = []
         for fly in self.flies:
             res = fly.update_sensors_and_brain(self.env, self.flies, dt_sec=eff_dt)
             decisions.append((fly, res))
             
-        # 2. Apply motor commands, physics, and interactions
-        for fly, (motor_commands, nearest_fly, min_dist, rel_angle) in decisions:
-            fly.apply_physics(motor_commands, nearest_fly, min_dist, rel_angle, self.env, dt_sec=eff_dt)
+        # 2. Apply 3D physics, locomotion, and interactions
+        for fly, (motor_commands, nearest_fly, min_dist, rel_angle, food_dist, food_grad) in decisions:
+            fly.apply_physics(motor_commands, nearest_fly, min_dist, rel_angle, food_dist, food_grad, self.env, dt_sec=eff_dt)
             
-        # 3. Step environmental field dynamics (pheromones, acoustic pulses)
+        # 3. Step 3D environmental dynamics
         self.env.step(dt_sec=eff_dt)
         self.step_count += 1
 
     def get_state(self):
-        """Compiles complete state package for WebSocket streaming."""
+        """Compiles 3D state package for WebSocket streaming to Three.js viewports."""
         return {
             "step": self.step_count,
             "paused": self.is_paused,
@@ -88,11 +94,3 @@ class FruitFlySimulation:
             "flies": [f.to_dict() for f in self.flies],
             "environment": self.env.to_dict()
         }
-
-def math_cos(x):
-    import math
-    return math.cos(x)
-
-def math_sin(x):
-    import math
-    return math.sin(x)

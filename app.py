@@ -9,7 +9,8 @@ from src.simulation_engine import FruitFlySimulation
 app = FastAPI(title="Drosophila Connectome Multi-Agent Simulation")
 
 # Global simulation instance
-sim = FruitFlySimulation(arena_size=300.0, num_flies=6)
+sim = FruitFlySimulation(arena_w=200.0, arena_d=200.0, arena_h=100.0, num_flies=6)
+
 
 # Mount static files
 web_dir = Path(__file__).resolve().parent / "web"
@@ -73,14 +74,18 @@ async def websocket_endpoint(websocket: WebSocket):
             elif action == "remove_fly":
                 sim.remove_fly(int(msg.get("fly_id")))
             elif action == "add_food":
-                x = float(msg.get("x", 150.0))
-                y = float(msg.get("y", 150.0))
-                sim.env.add_food_patch(x, y, radius=12.0, amount=90.0)
+                x = float(msg.get("x", 100.0))
+                y = float(msg.get("y", 100.0))
+                z = float(msg.get("z", 0.0))
+                food_type = msg.get("food_type", "banana_slice")
+                sim.env.add_food_patch_3d(x, y, z=z, food_type=food_type, amount=90.0)
             elif action == "add_pheromone":
-                x = float(msg.get("x", 150.0))
-                y = float(msg.get("y", 150.0))
+                x = float(msg.get("x", 100.0))
+                y = float(msg.get("y", 100.0))
+                z = float(msg.get("z", 0.0))
                 amount = float(msg.get("amount", 0.6))
-                sim.env.deposit_cva(x, y, amount=amount)
+                sim.env.deposit_cva_3d(x, y, z=z, amount=amount)
+
             elif action == "update_personality":
                 fid = int(msg.get("fly_id"))
                 pers = msg.get("personality", {})

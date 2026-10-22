@@ -1,135 +1,207 @@
 import math
+import random
 import numpy as np
 
 class SimulationEnvironment:
     """
-    Physical Drosophila Behavior Arena.
-    Simulates odor diffusion gradients (fermenting yeast/banana),
-    substrate cVA pheromone field, near-field acoustic courtship sound waves,
-    food consumption, and social event tracking.
+    3D Physical Drosophila Behavior Arena (200mm x 200mm x 100mm).
+    Simulates:
+    - 3D Terrarium with floor, glass walls, ceiling, and air volume for flight.
+    - 3D Interactive Objects: Climbing perches, elevated twigs, food platforms.
+    - 3D Food Objects (Banana slices, sugar cubes, yeast drops) emitting 3D odor plumes.
+    - Dopamine Reward System: Consuming sugar/nutrients directly triggers PAM dopaminergic influx.
+    - 3D Pheromone and Acoustic Pulse fields.
     """
 
-    def __init__(self, width=300.0, height=300.0):
+    def __init__(self, width=200.0, depth=200.0, height=100.0):
         self.width = float(width)
+        self.depth = float(depth)
         self.height = float(height)
         
-        # Food patches (x, y, radius_mm, amount)
-        self.food_patches = [
-            {"id": 1, "x": 80.0, "y": 80.0, "radius": 14.0, "amount": 100.0, "type": "banana_yeast"},
-            {"id": 2, "x": 220.0, "y": 210.0, "radius": 12.0, "amount": 80.0, "type": "apple_cider"}
+        # 3D Interactive Objects (Perches, climbing branches)
+        self.objects = [
+            # Main central climbing branch: cylinder from floor (Z=0) up to Z=65
+            {
+                "id": "perch_main",
+                "type": "cylinder",
+                "x": 100.0, "y": 100.0, "z": 0.0,
+                "radius": 4.5, "height": 65.0,
+                "color": "#6e4a2e",
+                "label": "Climbing Perch"
+            },
+            # Horizontal twig A extending from perch
+            {
+                "id": "twig_a",
+                "type": "branch",
+                "x1": 100.0, "y1": 100.0, "z1": 50.0,
+                "x2": 140.0, "y2": 110.0, "z2": 52.0,
+                "radius": 2.2,
+                "color": "#7d5435",
+                "label": "High Perch Twig"
+            },
+            # Elevated food platform
+            {
+                "id": "pedestal_b",
+                "type": "cylinder",
+                "x": 150.0, "y": 60.0, "z": 0.0,
+                "radius": 15.0, "height": 22.0,
+                "color": "#334155",
+                "label": "Elevated Platform"
+            }
         ]
         
-        # Pheromone 2D Grid (cVA - cis-vaccenyl acetate)
-        self.grid_res = 60  # 60x60 grid = 5mm per cell
-        self.cva_grid = np.zeros((self.grid_res, self.grid_res), dtype=np.float32)
+        # 3D Food Patches (Banana, Sugar, Yeast)
+        self.food_patches = [
+            {
+                "id": 1,
+                "x": 60.0, "y": 60.0, "z": 0.0,
+                "radius": 12.0, "height": 3.0,
+                "amount": 100.0,
+                "sugar_quality": 1.0,  # multiplier for dopamine reward
+                "type": "banana_slice",
+                "label": "Ripe Banana Slice"
+            },
+            {
+                "id": 2,
+                "x": 150.0, "y": 60.0, "z": 22.0,  # on the elevated platform
+                "radius": 9.0, "height": 4.0,
+                "amount": 90.0,
+                "sugar_quality": 1.2,  # high dopamine reward
+                "type": "sugar_cube",
+                "label": "Crystalline Sugar Cube"
+            },
+            {
+                "id": 3,
+                "x": 140.0, "y": 150.0, "z": 0.0,
+                "radius": 10.0, "height": 2.5,
+                "amount": 80.0,
+                "sugar_quality": 0.9,
+                "type": "yeast_agar",
+                "label": "Fermenting Yeast Drop"
+            }
+        ]
         
-        # Acoustic Sound Pulses (recent active song waves)
-        # list of dicts: {"x": float, "y": float, "radius": float, "intensity": float, "timer": int}
-        self.acoustic_waves = []
+        # 3D Pheromone Traces (cVA deposited on surfaces)
+        # List of dicts: {"x", "y", "z", "amount", "life"}
+        self.pheromone_traces = []
         
-        # Social Interaction Event Logs
+        # 3D Acoustic Near-Field Pulse Waves
+        self.acoustic_waves_3d = []
+        
+        # Social & Dopamine Events
         self.events = []
+        self.dopamine_events = []
         self.courtship_events = []
         self.fight_events = []
-        
-        # Interaction Matrix for Social Graph [fly_id_a][fly_id_b]
         self.interaction_matrix = {}
 
-    def add_food_patch(self, x, y, radius=12.0, amount=80.0):
+    def add_food_patch_3d(self, x, y, z=0.0, food_type="banana_slice", amount=90.0):
         new_id = len(self.food_patches) + 1
+        sugar_val = 1.2 if food_type == "sugar_cube" else 1.0
         self.food_patches.append({
             "id": new_id,
             "x": float(x),
             "y": float(y),
-            "radius": float(radius),
+            "z": float(z),
+            "radius": 11.0,
+            "height": 3.0,
             "amount": float(amount),
-            "type": "fresh_yeast"
+            "sugar_quality": sugar_val,
+            "type": food_type,
+            "label": "Fresh Banana Slice" if food_type == "banana_slice" else "Sugar Drop"
         })
         return new_id
 
-    def deposit_cva(self, x, y, amount=0.1):
-        gx = int((x / self.width) * self.grid_res)
-        gy = int((y / self.height) * self.grid_res)
-        if 0 <= gx < self.grid_res and 0 <= gy < self.grid_res:
-            self.cva_grid[gy, gx] = min(1.0, self.cva_grid[gy, gx] + amount)
-
-    def get_pheromone_cva(self, x, y):
-        gx = int((x / self.width) * self.grid_res)
-        gy = int((y / self.height) * self.grid_res)
-        if 0 <= gx < self.grid_res and 0 <= gy < self.grid_res:
-            return float(self.cva_grid[gy, gx])
-        return 0.0
-
-    def get_food_odor(self, x, y):
-        """Calculates total fermenting food odor intensity at (x, y) using Gaussian diffusion."""
+    def get_food_odor_3d(self, x, y, z):
+        """Calculates 3D diffusing fermenting food odor intensity at (x, y, z)."""
         total_odor = 0.0
         for fp in self.food_patches:
             if fp["amount"] <= 0:
                 continue
-            dist = math.hypot(x - fp["x"], y - fp["y"])
-            # Odor plume drops off with distance (characteristic length ~45mm)
-            odor = math.exp(- (dist ** 2) / (2 * 45.0 ** 2)) * (fp["amount"] / 100.0)
+            dx = x - fp["x"]
+            dy = y - fp["y"]
+            dz = z - fp["z"]
+            dist_sq = dx*dx + dy*dy + dz*dz
+            # Characteristic 3D plume diffusion (~40mm)
+            odor = math.exp(-dist_sq / (2 * 40.0 * 40.0)) * (fp["amount"] / 100.0)
             total_odor += odor
         return min(1.0, total_odor)
 
-    def get_food_gradient_angle(self, x, y):
-        """Calculates direction to maximum food odor gradient."""
+    def get_nearest_food_3d(self, x, y, z):
+        """Returns distance and gradient vector to nearest food patch."""
         nearest = None
         min_dist = 999.0
+        grad_dx, grad_dy, grad_dz = 0.0, 0.0, 0.0
         for fp in self.food_patches:
             if fp["amount"] <= 0:
                 continue
-            dist = math.hypot(x - fp["x"], y - fp["y"])
-            if dist < min_dist:
-                min_dist = dist
+            dx = fp["x"] - x
+            dy = fp["y"] - y
+            dz = fp["z"] - z
+            d = math.sqrt(dx*dx + dy*dy + dz*dz)
+            if d < min_dist:
+                min_dist = d
                 nearest = fp
-        if nearest and min_dist < 90.0:
-            return math.atan2(nearest["y"] - y, nearest["x"] - x)
-        return None
+                if d > 0.001:
+                    grad_dx, grad_dy, grad_dz = dx/d, dy/d, dz/d
+        return min_dist, nearest, (grad_dx, grad_dy, grad_dz)
 
-    def get_nearest_food_dist(self, x, y):
-        min_dist = 999.0
+    def consume_food_3d(self, x, y, z, max_intake=0.04):
+        """
+        Consumes food in 3D contact and computes the DOPAMINE REWARD.
+        Returns: (eaten_amount, dopamine_surge, food_label)
+        """
         for fp in self.food_patches:
             if fp["amount"] <= 0:
                 continue
-            dist = math.hypot(x - fp["x"], y - fp["y"])
-            if dist < min_dist:
-                min_dist = dist
-        return min_dist
+            # Distance in 3D
+            dx = x - fp["x"]
+            dy = y - fp["y"]
+            dz = z - fp["z"]
+            dist_xy = math.hypot(dx, dy)
+            if dist_xy <= fp["radius"] and abs(dz) <= (fp["height"] + 2.0):
+                eaten = min(fp["amount"], max_intake)
+                fp["amount"] -= eaten
+                # Dopamine surge formula: proportional to intake and sugar nutritional quality
+                dopamine_surge = eaten * fp["sugar_quality"] * 2.5
+                return eaten, dopamine_surge, fp["label"]
+        return 0.0, 0.0, None
 
-    def is_on_food(self, x, y):
-        for fp in self.food_patches:
-            if fp["amount"] > 0 and math.hypot(x - fp["x"], y - fp["y"]) <= fp["radius"]:
-                return True
-        return False
-
-    def consume_food(self, x, y, amount=0.01):
-        for fp in self.food_patches:
-            if fp["amount"] > 0 and math.hypot(x - fp["x"], y - fp["y"]) <= fp["radius"]:
-                taken = min(fp["amount"], amount)
-                fp["amount"] -= taken
-                return taken
-        return 0.0
-
-    def emit_song(self, x, y, intensity=0.8):
-        """Spawns an expanding near-field acoustic pulse wave."""
-        self.acoustic_waves.append({
+    def deposit_cva_3d(self, x, y, z, amount=0.08):
+        self.pheromone_traces.append({
             "x": float(x),
             "y": float(y),
-            "radius": 2.0,
-            "max_radius": 28.0,
-            "intensity": float(intensity),
-            "life": 12
+            "z": float(z),
+            "amount": float(amount),
+            "life": 45
         })
 
-    def get_acoustic_song(self, x, y, exclude_fly_id=None):
-        """Detects whether (x, y) is within any active acoustic pulse song wave."""
-        max_intensity = 0.0
-        for wave in self.acoustic_waves:
-            dist = math.hypot(x - wave["x"], y - wave["y"])
-            if abs(dist - wave["radius"]) < 5.0:
-                max_intensity = max(max_intensity, wave["intensity"])
-        return max_intensity
+    def get_pheromone_cva_3d(self, x, y, z):
+        total = 0.0
+        for p in self.pheromone_traces:
+            d = math.sqrt((x - p["x"])**2 + (y - p["y"])**2 + (z - p["z"])**2)
+            if d < 18.0:
+                total += p["amount"] * (1.0 - d / 18.0)
+        return min(1.0, total)
+
+    def emit_song_3d(self, x, y, z, intensity=0.9):
+        self.acoustic_waves_3d.append({
+            "x": float(x),
+            "y": float(y),
+            "z": float(z),
+            "radius": 2.0,
+            "max_radius": 32.0,
+            "intensity": float(intensity),
+            "life": 16
+        })
+
+    def get_acoustic_song_3d(self, x, y, z):
+        max_int = 0.0
+        for w in self.acoustic_waves_3d:
+            d = math.sqrt((x - w["x"])**2 + (y - w["y"])**2 + (z - w["z"])**2)
+            if abs(d - w["radius"]) < 6.0:
+                max_int = max(max_int, w["intensity"])
+        return max_int
 
     def record_courtship(self, suitor, target):
         event = {
@@ -146,7 +218,6 @@ class SimulationEnvironment:
         if len(self.courtship_events) > 100:
             self.courtship_events.pop(0)
             
-        # Record in social interaction matrix
         pair_key = f"{min(suitor.id, target.id)}-{max(suitor.id, target.id)}"
         self.interaction_matrix[pair_key] = self.interaction_matrix.get(pair_key, 0) + 1
 
@@ -164,42 +235,62 @@ class SimulationEnvironment:
         if len(self.fight_events) > 100:
             self.fight_events.pop(0)
             
-        # Target gets pushed back / startled
-        push_angle = math.atan2(target.y - aggressor.y, target.x - aggressor.x)
-        target.vx += math.cos(push_angle) * 35.0
-        target.vy += math.sin(push_angle) * 35.0
-        target.heading = push_angle
-        # Target brain startled
-        target.brain.firing_rates[target.brain.pop_idx["DN_ESCAPE"]] = 0.8
+        # Target fly is pushed back
+        push_dx = target.x - aggressor.x
+        push_dy = target.y - aggressor.y
+        push_dz = target.z - aggressor.z
+        norm = math.sqrt(push_dx*push_dx + push_dy*push_dy + push_dz*push_dz) + 0.001
+        target.vx += (push_dx / norm) * 35.0
+        target.vy += (push_dy / norm) * 35.0
+        target.vz += (push_dz / norm) * 15.0
+        target.brain.firing_rates[target.brain.pop_idx["DN_ESCAPE"]] = 0.85
         aggressor.fights_won += 1
         
         pair_key = f"{min(aggressor.id, target.id)}-{max(aggressor.id, target.id)}"
         self.interaction_matrix[pair_key] = self.interaction_matrix.get(pair_key, 0) + 1
 
     def step(self, dt_sec=0.016):
-        """Simulates environmental dynamics (pheromone evaporation, sound propagation)."""
-        # 1. Pheromone decay and slight diffusion
-        self.cva_grid *= 0.992
+        """Simulates 3D environmental dynamics."""
+        # 1. Decay pheromone traces
+        alive_p = []
+        for p in self.pheromone_traces:
+            p["life"] -= 1
+            p["amount"] *= 0.985
+            if p["life"] > 0:
+                alive_p.append(p)
+        self.pheromone_traces = alive_p[-120:]
         
-        # 2. Update acoustic waves
-        alive_waves = []
-        for wave in self.acoustic_waves:
-            wave["radius"] += 45.0 * dt_sec  # wave expansion speed
-            wave["life"] -= 1
-            wave["intensity"] *= 0.88
-            if wave["life"] > 0 and wave["radius"] < wave["max_radius"]:
-                alive_waves.append(wave)
-        self.acoustic_waves = alive_waves
+        # 2. Propagate 3D acoustic song pulses
+        alive_w = []
+        for w in self.acoustic_waves_3d:
+            w["radius"] += 45.0 * dt_sec
+            w["life"] -= 1
+            w["intensity"] *= 0.90
+            if w["life"] > 0 and w["radius"] < w["max_radius"]:
+                alive_w.append(w)
+        self.acoustic_waves_3d = alive_w
 
     def to_dict(self):
-        """Serializes arena state for frontend rendering."""
+        """Serializes 3D environment for Three.js rendering."""
         return {
             "width": self.width,
+            "depth": self.depth,
             "height": self.height,
-            "food_patches": self.food_patches,
+            "objects": self.objects,
+            "food_patches": [
+                {
+                    "id": fp["id"],
+                    "x": round(fp["x"], 1), "y": round(fp["y"], 1), "z": round(fp["z"], 1),
+                    "radius": fp["radius"], "height": fp["height"],
+                    "amount": round(fp["amount"], 1),
+                    "type": fp["type"],
+                    "label": fp["label"]
+                }
+                for fp in self.food_patches
+            ],
             "acoustic_waves": [
-                {"x": round(w["x"], 1), "y": round(w["y"], 1), "radius": round(w["radius"], 1), "intensity": round(w["intensity"], 2)}
-                for w in self.acoustic_waves
+                {"x": round(w["x"], 1), "y": round(w["y"], 1), "z": round(w["z"], 1), "radius": round(w["radius"], 1), "intensity": round(w["intensity"], 2)}
+                for w in self.acoustic_waves_3d
             ],
             "recent_events": self.events[-12:],
             "total_courtships": len(self.courtship_events),

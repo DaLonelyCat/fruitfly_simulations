@@ -240,13 +240,14 @@ body {
 
 .main-content-split {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(340px, 1fr) minmax(340px, 1fr);
   gap: 16px;
   padding: 16px;
   flex: 1;
+  align-items: start;
 }
 
-@media (max-width: 1180px) {
+@media (max-width: 860px) {
   .main-content-split {
     grid-template-columns: 1fr;
   }
@@ -418,6 +419,12 @@ body {
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
   overflow: hidden;
+}
+
+.three-container canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
 }
 
 .brain-3d-box {

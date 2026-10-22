@@ -1093,16 +1093,23 @@ class Arena3DView {
   }
 
   initResizeListener() {
-    window.addEventListener('resize', () => {
+    const handleResize = () => {
       if (!this.container) return;
       const w = this.container.clientWidth;
       const h = this.container.clientHeight;
       if (w > 0 && h > 0) {
         this.camera.aspect = w / h;
         this.camera.updateProjectionMatrix();
-        this.renderer.setSize(w, h);
+        this.renderer.setSize(w, h, false);
       }
-    });
+    };
+
+    if (window.ResizeObserver) {
+      this.resizeObserver = new ResizeObserver(handleResize);
+      this.resizeObserver.observe(this.container);
+    }
+    window.addEventListener('resize', handleResize);
+    setTimeout(handleResize, 50);
   }
 }
 

@@ -384,8 +384,33 @@ class SimulationEnvironment:
                                 f.vx -= dot * nx
                                 f.vy -= dot * ny
 
-        # 6. Final Ground Clamp & Bound Enforcement
+        # 6. Hanging Moss Swing Perch Hitbox (Allows flies to land on moss seat at Z ≈ 26mm)
+        if hasattr(self, 'hanging_swing'):
+            sw = self.hanging_swing
+            sw_x = sw["anchor_x"] + sw["length"] * math.sin(sw["angle_x"])
+            sw_y = sw["anchor_y"] + sw["length"] * math.sin(sw["angle_y"])
+            sw_z = sw["anchor_z"] - sw["length"] * math.cos(sw["angle_x"])
+            seat_top_z = sw_z + 1.6
+            seat_r = 5.0
+            
+            for f in flies:
+                if getattr(f, 'is_perched_on_swing', False):
+                    continue
+                dx = f.x - sw_x
+                dy = f.y - sw_y
+                dist_xy = math.hypot(dx, dy)
+                if dist_xy < (seat_r + hitbox_r) and abs(f.z - sw_z) < 3.0:
+                    if f.vz <= 0.0:
+                        f.z = seat_top_z
+                        f.vz = 0.0
+                        f.is_airborne = False
+                        f.is_perched_on_swing = True
+                        f.last_action_tag = "swinging"
+
+        # 7. Final Ground Clamp & Bound Enforcement
         for f in flies:
+            if getattr(f, 'is_perched_on_swing', False):
+                continue
             if f.z < ground_z:
                 f.z = ground_z
                 if f.vz < 0.0:
@@ -436,12 +461,9 @@ class SimulationEnvironment:
         target.brain.firing_rates[target.brain.pop_idx["DN_ESCAPE"]] = 0.85
         aggressor.fights_won += 1
 
-        # Inflict physical combat damage on target fly
-        damage = 18.0
-        if hasattr(target, 'health'):
-            target.health = max(0.0, target.health - damage)
-            if hasattr(target, 'mood'):
-                target.mood = max(0.0, target.mood - 0.22)
+        # Mood and Dominance Shift from Combat (No mortal damage)
+        if hasattr(target, 'mood'):
+            target.mood = max(0.0, target.mood - 0.22)
         if hasattr(aggressor, 'mood'):
             aggressor.mood = min(1.0, aggressor.mood + 0.15)  # Dominance boost
         
@@ -522,12 +544,16 @@ class SimulationEnvironment:
         if abs(self.running_wheel["angular_vel"]) < 0.01:
             self.running_wheel["angular_vel"] = 0.0
 
-        # Hanging Moss Swing damped harmonic oscillator
+        # Hanging Moss Swing damped harmonic oscillator with subtle vivarium breeze
         k_swing = 14.0
         damping = 0.75
-        self.hanging_swing["vel_x"] += (-k_swing * self.hanging_swing["angle_x"] - damping * self.hanging_swing["vel_x"]) * dt_sec
+        self.swing_breeze_timer = getattr(self, 'swing_breeze_timer', 0.0) + dt_sec
+        breeze_x = 0.08 * math.sin(self.swing_breeze_timer * 1.4)
+        breeze_y = 0.05 * math.cos(self.swing_breeze_timer * 1.1)
+
+        self.hanging_swing["vel_x"] += (-k_swing * self.hanging_swing["angle_x"] - damping * self.hanging_swing["vel_x"] + breeze_x) * dt_sec
         self.hanging_swing["angle_x"] += self.hanging_swing["vel_x"] * dt_sec
-        self.hanging_swing["vel_y"] += (-k_swing * self.hanging_swing["angle_y"] - damping * self.hanging_swing["vel_y"]) * dt_sec
+        self.hanging_swing["vel_y"] += (-k_swing * self.hanging_swing["angle_y"] - damping * self.hanging_swing["vel_y"] + breeze_y) * dt_sec
         self.hanging_swing["angle_y"] += self.hanging_swing["vel_y"] * dt_sec
 
     def to_dict(self):

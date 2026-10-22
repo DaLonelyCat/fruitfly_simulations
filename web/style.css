@@ -751,6 +751,12 @@ body {
   border-color: rgba(255, 51, 102, 0.4);
 }
 
+.vitals-status-badge.status-playful {
+  background-color: var(--accent-violet-bg);
+  color: #c084fc;
+  border-color: rgba(168, 85, 247, 0.4);
+}
+
 .vitals-status-badge.status-dead {
   background-color: rgba(148, 163, 184, 0.2);
   color: #94a3b8;
@@ -828,6 +834,18 @@ body {
 
 .vital-fun-fill {
   background: linear-gradient(90deg, #8b5cf6, #a855f7);
+}
+
+.vital-satiety-fill {
+  background: linear-gradient(90deg, #10b981, #34d399);
+}
+
+.vital-satiety-fill.low {
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+
+.vital-satiety-fill.critical {
+  background: linear-gradient(90deg, #ef4444, #f87171);
 }
 
 /* Optogenetic Stimulation Bar */

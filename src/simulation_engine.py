@@ -109,33 +109,6 @@ class FruitFlySimulation:
         # 4. Step 3D environmental dynamics
         self.env.step(dt_sec=eff_dt)
 
-        # 5. Mortality & Biological Respawn (Dead fly remains for 4s, then respawns)
-        surviving_flies = []
-        for f in self.flies:
-            if getattr(f, 'is_dead', False) and getattr(f, 'death_timer', 0.0) >= 4.0:
-                cause = "starvation" if f.satiety <= 0.05 else "combat"
-                self.env.events.append({
-                    "type": "fly_death",
-                    "fly_id": f.id,
-                    "archetype": f.archetype_name,
-                    "cause": cause,
-                    "timestamp_step": self.step_count
-                })
-                spawn_x = random.uniform(40.0, self.arena_w - 40.0)
-                spawn_y = random.uniform(40.0, self.arena_d - 40.0)
-                new_fly = FruitFlyAgent(
-                    fly_id=f.id,
-                    archetype_name=f.archetype_name,
-                    x=spawn_x,
-                    y=spawn_y,
-                    z=1.6,
-                    heading=random.uniform(0, 2 * math.pi)
-                )
-                surviving_flies.append(new_fly)
-            else:
-                surviving_flies.append(f)
-        self.flies = surviving_flies
-
         self.step_count += 1
 
 

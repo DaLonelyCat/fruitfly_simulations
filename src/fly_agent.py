@@ -130,6 +130,7 @@ class FruitFlyAgent:
         self.mood = 0.75               # 0.0 (Enraged/Hostile) to 1.0 (Ecstatic)
         self.entertainment = 0.5       # 0.0 (Bored) to 1.0 (Entertained)
         self.attack_cooldown = random.uniform(1.0, 3.0)
+        self.is_perched_on_swing = False
 
         # Metabolic & Dopamine State
         self.satiety = 0.6             # 0.0 (starving) to 1.0 (full)
@@ -173,11 +174,6 @@ class FruitFlyAgent:
 
     def update_sensors_and_brain(self, env, other_flies, dt_sec=0.016):
         """Calculates 3D sensory receptive fields and executes the connectome brain."""
-        if self.health <= 0.0 or self.is_dead:
-            self.is_dead = True
-            empty_cmd = {"walk": 0.0, "turn_bias": 0.5, "escape": 0.0, "lunge": 0.0, "song": 0.0, "feed": 0.0}
-            return empty_cmd, None, 999.0, 0.0, 999.0, None
-
         # 1. 3D Nearest Fly Detection
         nearest_fly = None
         min_dist = 999.0
@@ -255,25 +251,6 @@ class FruitFlyAgent:
         Translates descending neural commands into 3D body kinematics, flight transitions,
         wing articulations, dopamine reward feeding, and kinetic playground interactions.
         """
-        # 0. Check Vital Signs & Mortality
-        if self.health <= 0.0 or self.is_dead:
-            self.is_dead = True
-            self.health = 0.0
-            self.last_action_tag = "dead"
-            self.death_timer += dt_sec
-            self.roll = math.pi  # authentic inverted death posture (on back)
-            self.pitch = 0.0
-            self.vx = 0.0
-            self.vy = 0.0
-            self.vz = 0.0
-            self.z = 1.6
-            self.speed = 0.0
-            self.is_airborne = False
-            self.wing_left_angle = 15.0
-            self.wing_right_angle = 15.0
-            self.brain.last_thought = "Vital signs ceased. Neural connectome inactive."
-            return
-
         # Kinetic Fly Playground Interactions
         on_playground = False
         if not self.is_airborne:
@@ -291,25 +268,60 @@ class FruitFlyAgent:
                     self.brain.last_thought = "Exercising on running wheel! Dopamine surge, feeling great!"
                     on_playground = True
 
-            # B. Hanging Moss Swing at (110, 95, 32)
-            if not on_playground and hasattr(env, 'hanging_swing'):
-                swing = env.hanging_swing
-                swing_x = swing["anchor_x"] + swing["length"] * math.sin(swing["angle_x"])
-                swing_y = swing["anchor_y"] + swing["length"] * math.sin(swing["angle_y"])
-                swing_z = swing["anchor_z"] - swing["length"] * math.cos(swing["angle_x"])
-                dist_swing = math.sqrt((self.x - swing_x)**2 + (self.y - swing_y)**2 + (self.z - swing_z)**2)
-                if dist_swing < 7.0:
-                    swing["vel_x"] += max(0.5, abs(self.vx)) * 0.08
-                    swing["vel_y"] += max(0.5, abs(self.vy)) * 0.08
-                    self.entertainment = min(1.0, self.entertainment + 0.50 * dt_sec)
-                    self.mood = min(1.0, self.mood + 0.30 * dt_sec)
+        # B. Hanging Moss Swing at (110, 95, 26)
+        if hasattr(env, 'hanging_swing'):
+            swing = env.hanging_swing
+            swing_x = swing["anchor_x"] + swing["length"] * math.sin(swing["angle_x"])
+            swing_y = swing["anchor_y"] + swing["length"] * math.sin(swing["angle_y"])
+            swing_z = swing["anchor_z"] - swing["length"] * math.cos(swing["angle_x"])
+            dist_to_seat = math.sqrt((self.x - swing_x)**2 + (self.y - swing_y)**2 + (self.z - swing_z)**2)
+
+            # Airborne flight wake pushes the swing
+            if self.is_airborne and dist_to_seat < 12.0:
+                swing["vel_x"] += (self.vx * 0.04) + random.uniform(-0.02, 0.02)
+                swing["vel_y"] += (self.vy * 0.04) + random.uniform(-0.02, 0.02)
+                self.entertainment = min(1.0, self.entertainment + 0.40 * dt_sec)
+                # Landing on moss seat disc
+                if dist_to_seat < 6.5 and abs(self.z - swing_z) < 4.0:
+                    self.is_airborne = False
+                    self.flight_timer = 0
+                    self.is_perched_on_swing = True
+
+            # If perched or landing on moss seat
+            if getattr(self, 'is_perched_on_swing', False):
+                if random.random() < (0.015 * dt_sec * 60):
+                    self.is_perched_on_swing = False
+                    self.is_airborne = True
+                    self.flight_timer = random.randint(45, 90)
+                    self.vz = 22.0
+                    self.brain.last_thought = "Took off from moss swing into 3D flight!"
+                else:
+                    self.x = swing_x
+                    self.y = swing_y
+                    self.z = swing_z + 1.6
+                    self.vx = swing["vel_x"] * 10.0
+                    self.vy = swing["vel_y"] * 10.0
+                    self.vz = 0.0
+                    self.roll = swing["angle_y"] * 0.4
+                    self.pitch = swing["angle_x"] * 0.4
                     self.last_action_tag = "swinging"
-                    self.brain.last_thought = "Swaying on the hanging moss swing! What fun!"
+                    self.entertainment = min(1.0, self.entertainment + 0.65 * dt_sec)
+                    self.mood = min(1.0, self.mood + 0.35 * dt_sec)
+                    self.dopamine_level = min(1.0, self.dopamine_level + 0.15 * dt_sec)
+                    self.brain.last_thought = "Perched on the hanging moss swing! Swaying back and forth in the breeze."
                     on_playground = True
+                    swing["vel_x"] += random.uniform(-0.05, 0.05) * dt_sec
+                    swing["vel_y"] += random.uniform(-0.05, 0.05) * dt_sec
+            elif not self.is_airborne and dist_to_seat < 6.0:
+                self.is_perched_on_swing = True
+                self.last_action_tag = "swinging"
+                self.entertainment = min(1.0, self.entertainment + 0.15)
+                self.mood = min(1.0, self.mood + 0.10)
+                on_playground = True
 
         # Attacks in Bad Mood (mood < 0.28)
         self.attack_cooldown = max(0.0, self.attack_cooldown - dt_sec)
-        if self.mood < 0.28 and self.attack_cooldown <= 0.0 and nearest_fly and min_dist < 12.0 and not getattr(nearest_fly, 'is_dead', False):
+        if self.mood < 0.28 and self.attack_cooldown <= 0.0 and nearest_fly and min_dist < 12.0:
             self.is_lunging = True
             self.lunge_timer = 15
             self.last_action_tag = "lunging"
@@ -558,10 +570,9 @@ class FruitFlyAgent:
         self.brain.personality["hunger"] = max(0.0, min(1.0, 1.0 - self.satiety))
 
         if self.satiety <= 0.02:
-            self.health = max(0.0, self.health - 2.2 * dt_sec)
-            self.brain.last_thought = "Starving! Health deteriorating, need food immediately!"
-        elif self.satiety > 0.60 and self.mood > 0.40 and self.health < 100.0:
-            self.health = min(100.0, self.health + 0.8 * dt_sec)
+            self.brain.last_thought = "Extremely hungry! Searching urgently for fruit/sugar..."
+        elif self.satiety > 0.60 and self.mood > 0.40:
+            self.health = 100.0
 
         # Entertainment decay & Dynamic Mood Dynamics
         self.entertainment = max(0.0, self.entertainment - 0.008 * dt_sec)
@@ -579,11 +590,12 @@ class FruitFlyAgent:
             "archetype": self.archetype_name,
             "gender": self.gender,
             "color": self.color,
-            "health": round(self.health, 1),
+            "health": 100.0,
             "max_health": self.max_health,
             "mood": round(self.mood, 2),
+            "satiety": round(self.satiety, 2),
             "entertainment": round(self.entertainment, 2),
-            "is_dead": self.is_dead,
+            "is_dead": False,
             "x": round(self.x, 2),
             "y": round(self.y, 2),
             "z": round(max(1.6, self.z), 2),

@@ -565,21 +565,32 @@ class Arena3DView {
 
     const ropeMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.9 });
     const ropeGeom = new THREE.CylinderGeometry(0.18, 0.18, 26, 6);
-    
-    const ropeL = new THREE.Mesh(ropeGeom, ropeMat);
-    ropeL.position.set(-2.5, 0, -13);
-    swingAnchor.add(ropeL);
 
-    const ropeR = new THREE.Mesh(ropeGeom, ropeMat);
-    ropeR.position.set(2.5, 0, -13);
-    swingAnchor.add(ropeR);
+    // Overhead Branch Knot Collar
+    const tieGeom = new THREE.TorusGeometry(2.2, 0.35, 6, 16);
+    const tieMesh = new THREE.Mesh(tieGeom, ropeMat);
+    tieMesh.rotation.y = Math.PI / 2;
+    swingAnchor.add(tieMesh);
+    
+    // 3 Vertical Suspension Cords hanging along Z axis from Z=0 to Z=-26
+    const ropeOffsets = [
+      [-2.8, 0],
+      [1.4, 2.4],
+      [1.4, -2.4]
+    ];
+    ropeOffsets.forEach(([rx, ry]) => {
+      const rope = new THREE.Mesh(ropeGeom, ropeMat);
+      rope.position.set(rx, ry, -13);
+      rope.rotation.x = Math.PI / 2;
+      swingAnchor.add(rope);
+    });
 
     // Moss Disc Seat at Z = -26
-    const discGeom = new THREE.CylinderGeometry(4.5, 4.5, 1.2, 16);
+    const discGeom = new THREE.CylinderGeometry(4.8, 5.2, 1.4, 18);
     const discMat = new THREE.MeshStandardMaterial({
       color: 0x2e7d32,
-      roughness: 0.85,
-      metalness: 0.1
+      roughness: 0.9,
+      metalness: 0.05
     });
     const disc = new THREE.Mesh(discGeom, discMat);
     disc.position.set(0, 0, -26);
@@ -588,19 +599,40 @@ class Arena3DView {
     swingAnchor.add(disc);
 
     // Woven Twig Rim
-    const rimTorus = new THREE.TorusGeometry(4.6, 0.35, 6, 20);
+    const rimTorus = new THREE.TorusGeometry(5.0, 0.38, 6, 24);
     const rimTwig = new THREE.Mesh(rimTorus, ropeMat);
     rimTwig.position.set(0, 0, -26);
     swingAnchor.add(rimTwig);
 
+    // Plush 3D Moss Cushions on top of the seat
+    const mossTuftMat = new THREE.MeshStandardMaterial({
+      color: 0x4d7c0f,
+      roughness: 0.95
+    });
+    const mossTufts = [
+      [0, 0, 0.7],
+      [-1.8, 1.2, 0.6],
+      [1.6, 1.4, 0.5],
+      [1.5, -1.5, 0.6],
+      [-1.6, -1.3, 0.5]
+    ];
+    mossTufts.forEach(([mx, my, mz]) => {
+      const tuftGeom = new THREE.SphereGeometry(1.3, 8, 8);
+      const tuft = new THREE.Mesh(tuftGeom, mossTuftMat);
+      tuft.position.set(mx, my, -26.0 + mz);
+      tuft.scale.set(1.1, 1.1, 0.55);
+      swingAnchor.add(tuft);
+    });
+
+    // Synchronized Swing Hitbox parented directly to swingAnchor
+    const swingHbGeom = new THREE.CylinderGeometry(5.5, 5.5, 2.5, 12);
+    const swingHb = new THREE.Mesh(swingHbGeom, objHbMat);
+    swingHb.position.set(0, 0, -26);
+    swingHb.rotation.x = Math.PI / 2;
+    swingAnchor.add(swingHb);
+
     vivariumGroup.add(swingAnchor);
     this.hangingSwingAnchorGroup = swingAnchor;
-
-    // Swing Hitbox
-    const swingHbGeom = new THREE.CylinderGeometry(5.0, 5.0, 2.0, 12);
-    const swingHb = new THREE.Mesh(swingHbGeom, objHbMat);
-    swingHb.position.set(110, 95, 26);
-    this.objectHitboxesGroup.add(swingHb);
 
     this.scene.add(vivariumGroup);
   }
@@ -1383,17 +1415,7 @@ class Arena3DView {
         flyObj.root.rotation.x += (flyObj.targetRoll - flyObj.root.rotation.x) * rotAlpha;
       }
 
-      if (fly && (fly.is_dead || fly.action === 'dead')) {
-        // Authentic inverted death posture on back with curled legs
-        flyObj.root.rotation.x = Math.PI;
-        flyObj.root.rotation.y = 0;
-        flyObj.wingLeft.rotation.set(0, 0, 15 * Math.PI / 180);
-        flyObj.wingRight.rotation.set(0, 0, -15 * Math.PI / 180);
-        flyObj.legs.forEach((legGroup) => {
-          legGroup.rotation.z = 0.85; // curl inward toward thorax
-          legGroup.rotation.y = 0.0;
-        });
-      } else if (fly) {
+      if (fly) {
         // Wings & Halteres
         if (fly.is_airborne || fly.action === 'flying' || fly.action === 'takeoff') {
           const wingFlap = Math.sin(t * 70.0) * 0.65;

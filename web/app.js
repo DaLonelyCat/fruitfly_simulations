@@ -74,10 +74,10 @@
   const droughtBanner = document.getElementById('drought-banner');
   const btnDroughtFeed = document.getElementById('btn-drought-feed');
   const vitalStatusBadge = document.getElementById('vital-status-badge');
-  const vitalHealthVal = document.getElementById('vital-health-val');
-  const vitalHealthFill = document.getElementById('vital-health-fill');
   const vitalMoodVal = document.getElementById('vital-mood-val');
   const vitalMoodFill = document.getElementById('vital-mood-fill');
+  const vitalSatietyVal = document.getElementById('vital-satiety-val');
+  const vitalSatietyFill = document.getElementById('vital-satiety-fill');
   const vitalFunVal = document.getElementById('vital-fun-val');
   const vitalFunFill = document.getElementById('vital-fun-fill');
 
@@ -662,28 +662,20 @@
       }
 
       // Update Physical & Mental Vitals Card
-      const hp = selFly.health !== undefined ? selFly.health : 100.0;
-      const maxHp = selFly.max_health || 100.0;
       const mood = selFly.mood !== undefined ? selFly.mood : 0.75;
+      const satiety = selFly.satiety !== undefined ? selFly.satiety : 0.6;
       const fun = selFly.entertainment !== undefined ? selFly.entertainment : 0.5;
-      const isDead = Boolean(selFly.is_dead);
-
-      if (vitalHealthVal && vitalHealthFill) {
-        vitalHealthVal.textContent = `${Math.round(hp)} / ${Math.round(maxHp)}`;
-        const hpPct = Math.max(0, Math.min(100, Math.round((hp / maxHp) * 100)));
-        vitalHealthFill.style.width = `${hpPct}%`;
-        vitalHealthFill.className = 'vital-fill vital-health-fill' + (hpPct < 25 ? ' critical' : hpPct < 55 ? ' low' : '');
-      }
+      const action = selFly.action || 'walking';
 
       if (vitalMoodVal && vitalMoodFill) {
         const moodPct = Math.max(0, Math.min(100, Math.round(mood * 100)));
         let moodLabel = 'Content';
         let moodClass = '';
         if (mood < 0.28) {
-          moodLabel = 'Aggressive / Enraged';
+          moodLabel = 'Enraged';
           moodClass = ' aggressive';
         } else if (mood < 0.5) {
-          moodLabel = 'Irritable / Restless';
+          moodLabel = 'Restless';
           moodClass = ' agitated';
         } else if (mood > 0.8) {
           moodLabel = 'Euphoric';
@@ -693,6 +685,24 @@
         vitalMoodFill.className = 'vital-fill vital-mood-fill' + moodClass;
       }
 
+      if (vitalSatietyVal && vitalSatietyFill) {
+        const satPct = Math.max(0, Math.min(100, Math.round(satiety * 100)));
+        let satLabel = 'Sated';
+        let satClass = '';
+        if (satPct < 20) {
+          satLabel = 'Starving';
+          satClass = ' critical';
+        } else if (satPct < 45) {
+          satLabel = 'Hungry';
+          satClass = ' low';
+        } else if (satPct > 80) {
+          satLabel = 'Well-Fed';
+        }
+        vitalSatietyVal.textContent = `${satPct}% (${satLabel})`;
+        vitalSatietyFill.style.width = `${satPct}%`;
+        vitalSatietyFill.className = 'vital-fill vital-satiety-fill' + satClass;
+      }
+
       if (vitalFunVal && vitalFunFill) {
         const funPct = Math.max(0, Math.min(100, Math.round(fun * 100)));
         vitalFunVal.textContent = `${funPct}%`;
@@ -700,17 +710,17 @@
       }
 
       if (vitalStatusBadge) {
-        if (isDead || hp <= 0) {
-          vitalStatusBadge.textContent = 'Deceased (Respawning)';
-          vitalStatusBadge.className = 'vitals-status-badge status-dead';
-        } else if (hp < 30 || mood < 0.28) {
-          vitalStatusBadge.textContent = hp < 30 ? 'Critical' : 'Hostile';
+        if (action === 'swinging' || action === 'exercising' || fun > 0.7) {
+          vitalStatusBadge.textContent = action === 'swinging' ? 'Swinging' : action === 'exercising' ? 'Exercising' : 'Playful';
+          vitalStatusBadge.className = 'vitals-status-badge status-playful';
+        } else if (mood < 0.28 || action === 'lunging') {
+          vitalStatusBadge.textContent = 'Enraged';
           vitalStatusBadge.className = 'vitals-status-badge status-danger';
-        } else if (hp < 60 || mood < 0.5) {
-          vitalStatusBadge.textContent = 'Distressed';
+        } else if (mood < 0.5 || satiety < 0.25) {
+          vitalStatusBadge.textContent = satiety < 0.25 ? 'Foraging' : 'Restless';
           vitalStatusBadge.className = 'vitals-status-badge status-warning';
         } else {
-          vitalStatusBadge.textContent = 'Healthy';
+          vitalStatusBadge.textContent = 'Peaceful';
           vitalStatusBadge.className = 'vitals-status-badge';
         }
       }

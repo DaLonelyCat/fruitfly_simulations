@@ -92,6 +92,9 @@
   let availableArchetypes = {};
   let selectedSpawnArchetype = 'Romeo';
 
+  // Default production cloud backend
+  const DEFAULT_CLOUD_BACKEND = 'https://fruitfly-simulations.onrender.com';
+
   // Backend Configuration (Supports localhost, Cloudflare Pages proxy, or standalone cloud host)
   function getBackendConfig() {
     // 1. Check URL query parameters (?backend=https://...)
@@ -113,11 +116,27 @@
       };
     }
 
-    // 3. Fallback to same-origin (standard for local dev or unified server)
-    const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    // 3. If running locally on localhost / 127.0.0.1, use local same-origin server
+    const isLocalhost = Boolean(
+      window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1' ||
+      window.location.hostname === '[::1]'
+    );
+    if (isLocalhost) {
+      const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      return {
+        httpBase: '',
+        wsUrl: `${proto}//${window.location.host}/ws`
+      };
+    }
+
+    // 4. Default for Cloudflare Pages (*.pages.dev or public web deployments)
+    const clean = DEFAULT_CLOUD_BACKEND.replace(/\/+$/, '');
+    const wsProto = clean.startsWith('https') ? 'wss:' : 'ws:';
+    const wsHost = clean.replace(/^https?:\/\//, '');
     return {
-      httpBase: '',
-      wsUrl: `${proto}//${window.location.host}/ws`
+      httpBase: clean,
+      wsUrl: `${wsProto}//${wsHost}/ws`
     };
   }
 

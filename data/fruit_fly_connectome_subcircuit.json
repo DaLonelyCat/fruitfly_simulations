@@ -1,0 +1,1878 @@
+{
+  "populations": [
+    "VIS_LC10",
+    "VIS_LC4",
+    "VIS_LC11",
+    "OLF_DA1",
+    "OLF_FOOD",
+    "CHE_PHERO",
+    "CX_EPG",
+    "CX_PEN",
+    "CX_FB",
+    "MB_KC",
+    "MB_MBON",
+    "MB_DAN",
+    "SOC_MAL",
+    "SOC_P1",
+    "SOC_AGG",
+    "DN_WALK",
+    "DN_TURN",
+    "DN_SONG",
+    "DN_LUNGE",
+    "DN_FEED",
+    "DN_ESCAPE"
+  ],
+  "population_sizes": {
+    "VIS_LC10": 960,
+    "VIS_LC4": 387,
+    "VIS_LC11": 143,
+    "OLF_DA1": 217,
+    "OLF_FOOD": 670,
+    "CHE_PHERO": 752,
+    "CX_EPG": 50,
+    "CX_PEN": 42,
+    "CX_FB": 561,
+    "MB_KC": 4062,
+    "MB_MBON": 97,
+    "MB_DAN": 332,
+    "SOC_MAL": 159,
+    "SOC_P1": 665,
+    "SOC_AGG": 44,
+    "DN_WALK": 39,
+    "DN_TURN": 66,
+    "DN_SONG": 29,
+    "DN_LUNGE": 89,
+    "DN_FEED": 16,
+    "DN_ESCAPE": 34
+  },
+  "synapse_matrix": [
+    [
+      116909.0,
+      1013.0,
+      211.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      751.0,
+      99.0,
+      8.0,
+      2621.0,
+      12.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      926.0,
+      69455.0,
+      179.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      6.0,
+      9.0,
+      0.0,
+      51.0,
+      1090.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      7.0,
+      0.0,
+      0.0
+    ],
+    [
+      2480.0,
+      120.0,
+      15491.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      62.0,
+      4.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      47958.0,
+      161.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      10677.0,
+      0.0,
+      0.0,
+      96.0,
+      75.0,
+      5.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      317.0,
+      45428.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      3.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      125825.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      7.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      11772.0,
+      12526.0,
+      3488.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      24251.0,
+      17916.0,
+      1761.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      169.0,
+      67.0,
+      160289.0,
+      3.0,
+      120.0,
+      109.0,
+      76.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      200.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      2.0,
+      1153805.0,
+      463637.0,
+      281369.0,
+      268.0,
+      10.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      66.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      3.0,
+      11181.0,
+      26259.0,
+      11020.0,
+      1486.0,
+      224.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      386.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      7.0,
+      0.0,
+      111.0,
+      223045.0,
+      39616.0,
+      9521.0,
+      148.0,
+      48.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0
+    ],
+    [
+      63.0,
+      174.0,
+      0.0,
+      11.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      107.0,
+      35.0,
+      2368.0,
+      1487.0,
+      29566.0,
+      18651.0,
+      779.0,
+      0.0,
+      0.0,
+      0.0,
+      306.0,
+      0.0,
+      0.0
+    ],
+    [
+      2272.0,
+      1981.0,
+      329.0,
+      0.0,
+      0.0,
+      0.0,
+      4.0,
+      4.0,
+      11.0,
+      1.0,
+      296.0,
+      565.0,
+      12827.0,
+      61263.0,
+      1947.0,
+      0.0,
+      0.0,
+      0.0,
+      620.0,
+      0.0,
+      0.0
+    ],
+    [
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      62.0,
+      997.0,
+      2677.0,
+      5.0,
+      2.0,
+      0.0,
+      171.0,
+      12.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      947.0,
+      90.0,
+      43.0,
+      142.0,
+      195.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      89.0,
+      1824.0,
+      1.0,
+      130.0,
+      8.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      33.0,
+      1.0,
+      525.0,
+      42.0,
+      4.0,
+      0.0
+    ],
+    [
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      9.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      17.0,
+      0.0,
+      244.0,
+      347.0,
+      49.0,
+      53.0,
+      371.0,
+      13.0,
+      1930.0,
+      27.0,
+      38.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      8.0,
+      12.0,
+      11.0,
+      43.0,
+      77.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      2.0,
+      0.0,
+      1935.0
+    ]
+  ],
+  "normalized_matrix": [
+    [
+      121.78020833333333,
+      1.0552083333333333,
+      0.21979166666666666,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.7822916666666667,
+      0.103125,
+      0.008333333333333333,
+      2.730208333333333,
+      0.0125,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      2.392764857881137,
+      179.4702842377261,
+      0.4625322997416021,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.015503875968992248,
+      0.023255813953488372,
+      0.0,
+      0.13178294573643412,
+      2.8165374677002584,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.01808785529715762,
+      0.0,
+      0.0
+    ],
+    [
+      17.342657342657343,
+      0.8391608391608392,
+      108.32867132867133,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.006993006993006993,
+      0.43356643356643354,
+      0.027972027972027972,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      221.00460829493088,
+      0.7419354838709677,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      49.20276497695853,
+      0.0,
+      0.0,
+      0.4423963133640553,
+      0.3456221198156682,
+      0.02304147465437788,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      0.47313432835820896,
+      67.80298507462686,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.004477611940298508,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      167.32047872340425,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.009308510638297872,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      235.44,
+      250.52,
+      69.76,
+      0.0,
+      0.0,
+      0.02,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      577.4047619047619,
+      426.57142857142856,
+      41.92857142857143,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.30124777183600715,
+      0.11942959001782531,
+      285.72014260249557,
+      0.0053475935828877,
+      0.21390374331550802,
+      0.19429590017825313,
+      0.1354723707664884,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      0.049236829148202856,
+      0.0,
+      0.0,
+      0.0002461841457410143,
+      0.0,
+      0.0004923682914820286,
+      284.048498276711,
+      114.14007877892664,
+      69.26858690300345,
+      0.06597735105859183,
+      0.002461841457410143,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.6804123711340206,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.030927835051546393,
+      115.26804123711341,
+      270.7113402061856,
+      113.6082474226804,
+      15.31958762886598,
+      2.3092783505154637,
+      0.010309278350515464,
+      0.0,
+      0.0,
+      0.0,
+      3.979381443298969,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      0.0030120481927710845,
+      0.0,
+      0.0,
+      0.02108433734939759,
+      0.0,
+      0.33433734939759036,
+      671.8222891566265,
+      119.32530120481928,
+      28.677710843373493,
+      0.4457831325301205,
+      0.14457831325301204,
+      0.0030120481927710845,
+      0.0,
+      0.0,
+      0.0,
+      0.0030120481927710845,
+      0.0,
+      0.0
+    ],
+    [
+      0.39622641509433965,
+      1.0943396226415094,
+      0.0,
+      0.06918238993710692,
+      0.0,
+      0.0,
+      0.006289308176100629,
+      0.0,
+      0.6729559748427673,
+      0.22012578616352202,
+      14.89308176100629,
+      9.352201257861635,
+      185.9496855345912,
+      117.30188679245283,
+      4.89937106918239,
+      0.0,
+      0.0,
+      0.0,
+      1.9245283018867925,
+      0.0,
+      0.0
+    ],
+    [
+      3.4165413533834585,
+      2.9789473684210526,
+      0.49473684210526314,
+      0.0,
+      0.0,
+      0.0,
+      0.006015037593984963,
+      0.006015037593984963,
+      0.016541353383458645,
+      0.0015037593984962407,
+      0.44511278195488724,
+      0.849624060150376,
+      19.28872180451128,
+      92.12481203007519,
+      2.9278195488721805,
+      0.0,
+      0.0,
+      0.0,
+      0.9323308270676691,
+      0.0,
+      0.0
+    ],
+    [
+      0.022727272727272728,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.022727272727272728,
+      1.4090909090909092,
+      22.65909090909091,
+      60.84090909090909,
+      0.11363636363636363,
+      0.045454545454545456,
+      0.0,
+      3.8863636363636362,
+      0.2727272727272727,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      24.28205128205128,
+      2.3076923076923075,
+      1.1025641025641026,
+      3.641025641025641,
+      5.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.3484848484848484,
+      27.636363636363637,
+      0.015151515151515152,
+      1.9696969696969697,
+      0.12121212121212122,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.1379310344827587,
+      0.034482758620689655,
+      18.103448275862068,
+      1.4482758620689655,
+      0.13793103448275862,
+      0.0
+    ],
+    [
+      0.0,
+      0.011235955056179775,
+      0.0,
+      0.0,
+      0.0,
+      0.10112359550561797,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.19101123595505617,
+      0.0,
+      2.741573033707865,
+      3.898876404494382,
+      0.550561797752809,
+      0.5955056179775281,
+      4.168539325842697,
+      0.14606741573033707,
+      21.685393258426966,
+      0.30337078651685395,
+      0.42696629213483145
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0625,
+      0.5,
+      0.75,
+      0.6875,
+      2.6875,
+      4.8125,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.058823529411764705,
+      0.0,
+      56.911764705882355
+    ]
+  ],
+  "top_connections": [
+    {
+      "source": "VIS_LC10",
+      "target": "VIS_LC10",
+      "synapses": 116909,
+      "edges": 37932
+    },
+    {
+      "source": "VIS_LC10",
+      "target": "VIS_LC4",
+      "synapses": 1013,
+      "edges": 525
+    },
+    {
+      "source": "VIS_LC10",
+      "target": "VIS_LC11",
+      "synapses": 211,
+      "edges": 168
+    },
+    {
+      "source": "VIS_LC10",
+      "target": "MB_MBON",
+      "synapses": 751,
+      "edges": 154
+    },
+    {
+      "source": "VIS_LC10",
+      "target": "MB_DAN",
+      "synapses": 99,
+      "edges": 22
+    },
+    {
+      "source": "VIS_LC10",
+      "target": "SOC_MAL",
+      "synapses": 8,
+      "edges": 6
+    },
+    {
+      "source": "VIS_LC10",
+      "target": "SOC_P1",
+      "synapses": 2621,
+      "edges": 1058
+    },
+    {
+      "source": "VIS_LC10",
+      "target": "SOC_AGG",
+      "synapses": 12,
+      "edges": 10
+    },
+    {
+      "source": "VIS_LC4",
+      "target": "VIS_LC10",
+      "synapses": 926,
+      "edges": 601
+    },
+    {
+      "source": "VIS_LC4",
+      "target": "VIS_LC4",
+      "synapses": 69455,
+      "edges": 20877
+    },
+    {
+      "source": "VIS_LC4",
+      "target": "VIS_LC11",
+      "synapses": 179,
+      "edges": 151
+    },
+    {
+      "source": "VIS_LC4",
+      "target": "MB_KC",
+      "synapses": 6,
+      "edges": 5
+    },
+    {
+      "source": "VIS_LC4",
+      "target": "MB_MBON",
+      "synapses": 9,
+      "edges": 5
+    },
+    {
+      "source": "VIS_LC4",
+      "target": "SOC_MAL",
+      "synapses": 51,
+      "edges": 23
+    },
+    {
+      "source": "VIS_LC4",
+      "target": "SOC_P1",
+      "synapses": 1090,
+      "edges": 679
+    },
+    {
+      "source": "VIS_LC4",
+      "target": "DN_LUNGE",
+      "synapses": 7,
+      "edges": 4
+    },
+    {
+      "source": "VIS_LC11",
+      "target": "VIS_LC10",
+      "synapses": 2480,
+      "edges": 770
+    },
+    {
+      "source": "VIS_LC11",
+      "target": "VIS_LC4",
+      "synapses": 120,
+      "edges": 95
+    },
+    {
+      "source": "VIS_LC11",
+      "target": "VIS_LC11",
+      "synapses": 15491,
+      "edges": 6967
+    },
+    {
+      "source": "VIS_LC11",
+      "target": "SOC_MAL",
+      "synapses": 1,
+      "edges": 1
+    },
+    {
+      "source": "VIS_LC11",
+      "target": "SOC_P1",
+      "synapses": 62,
+      "edges": 51
+    },
+    {
+      "source": "VIS_LC11",
+      "target": "SOC_AGG",
+      "synapses": 4,
+      "edges": 4
+    },
+    {
+      "source": "OLF_DA1",
+      "target": "OLF_DA1",
+      "synapses": 47958,
+      "edges": 12197
+    },
+    {
+      "source": "OLF_DA1",
+      "target": "OLF_FOOD",
+      "synapses": 161,
+      "edges": 130
+    },
+    {
+      "source": "OLF_DA1",
+      "target": "MB_KC",
+      "synapses": 10677,
+      "edges": 633
+    },
+    {
+      "source": "OLF_DA1",
+      "target": "SOC_MAL",
+      "synapses": 96,
+      "edges": 12
+    },
+    {
+      "source": "OLF_DA1",
+      "target": "SOC_P1",
+      "synapses": 75,
+      "edges": 36
+    },
+    {
+      "source": "OLF_DA1",
+      "target": "SOC_AGG",
+      "synapses": 5,
+      "edges": 3
+    },
+    {
+      "source": "OLF_FOOD",
+      "target": "OLF_DA1",
+      "synapses": 317,
+      "edges": 183
+    },
+    {
+      "source": "OLF_FOOD",
+      "target": "OLF_FOOD",
+      "synapses": 45428,
+      "edges": 18126
+    },
+    {
+      "source": "OLF_FOOD",
+      "target": "SOC_MAL",
+      "synapses": 3,
+      "edges": 3
+    },
+    {
+      "source": "CHE_PHERO",
+      "target": "CHE_PHERO",
+      "synapses": 125825,
+      "edges": 26273
+    },
+    {
+      "source": "CHE_PHERO",
+      "target": "DN_LUNGE",
+      "synapses": 7,
+      "edges": 6
+    },
+    {
+      "source": "CX_EPG",
+      "target": "CX_EPG",
+      "synapses": 11772,
+      "edges": 893
+    },
+    {
+      "source": "CX_EPG",
+      "target": "CX_PEN",
+      "synapses": 12526,
+      "edges": 681
+    },
+    {
+      "source": "CX_EPG",
+      "target": "CX_FB",
+      "synapses": 3488,
+      "edges": 463
+    },
+    {
+      "source": "CX_EPG",
+      "target": "MB_DAN",
+      "synapses": 1,
+      "edges": 1
+    },
+    {
+      "source": "CX_PEN",
+      "target": "CX_EPG",
+      "synapses": 24251,
+      "edges": 765
+    },
+    {
+      "source": "CX_PEN",
+      "target": "CX_PEN",
+      "synapses": 17916,
+      "edges": 1069
+    },
+    {
+      "source": "CX_PEN",
+      "target": "CX_FB",
+      "synapses": 1761,
+      "edges": 343
+    },
+    {
+      "source": "CX_FB",
+      "target": "CX_EPG",
+      "synapses": 169,
+      "edges": 130
+    },
+    {
+      "source": "CX_FB",
+      "target": "CX_PEN",
+      "synapses": 67,
+      "edges": 48
+    },
+    {
+      "source": "CX_FB",
+      "target": "CX_FB",
+      "synapses": 160289,
+      "edges": 25360
+    },
+    {
+      "source": "CX_FB",
+      "target": "MB_KC",
+      "synapses": 3,
+      "edges": 3
+    },
+    {
+      "source": "CX_FB",
+      "target": "MB_MBON",
+      "synapses": 120,
+      "edges": 42
+    },
+    {
+      "source": "CX_FB",
+      "target": "MB_DAN",
+      "synapses": 109,
+      "edges": 67
+    },
+    {
+      "source": "CX_FB",
+      "target": "SOC_MAL",
+      "synapses": 76,
+      "edges": 46
+    },
+    {
+      "source": "MB_KC",
+      "target": "OLF_DA1",
+      "synapses": 200,
+      "edges": 176
+    },
+    {
+      "source": "MB_KC",
+      "target": "CX_EPG",
+      "synapses": 1,
+      "edges": 1
+    },
+    {
+      "source": "MB_KC",
+      "target": "CX_FB",
+      "synapses": 2,
+      "edges": 2
+    },
+    {
+      "source": "MB_KC",
+      "target": "MB_KC",
+      "synapses": 1153805,
+      "edges": 642897
+    },
+    {
+      "source": "MB_KC",
+      "target": "MB_MBON",
+      "synapses": 463637,
+      "edges": 61209
+    },
+    {
+      "source": "MB_KC",
+      "target": "MB_DAN",
+      "synapses": 281369,
+      "edges": 145242
+    },
+    {
+      "source": "MB_KC",
+      "target": "SOC_MAL",
+      "synapses": 268,
+      "edges": 196
+    },
+    {
+      "source": "MB_KC",
+      "target": "SOC_P1",
+      "synapses": 10,
+      "edges": 6
+    },
+    {
+      "source": "MB_MBON",
+      "target": "VIS_LC4",
+      "synapses": 66,
+      "edges": 16
+    },
+    {
+      "source": "MB_MBON",
+      "target": "CX_FB",
+      "synapses": 3,
+      "edges": 3
+    },
+    {
+      "source": "MB_MBON",
+      "target": "MB_KC",
+      "synapses": 11181,
+      "edges": 6813
+    },
+    {
+      "source": "MB_MBON",
+      "target": "MB_MBON",
+      "synapses": 26259,
+      "edges": 1606
+    },
+    {
+      "source": "MB_MBON",
+      "target": "MB_DAN",
+      "synapses": 11020,
+      "edges": 2538
+    },
+    {
+      "source": "MB_MBON",
+      "target": "SOC_MAL",
+      "synapses": 1486,
+      "edges": 145
+    },
+    {
+      "source": "MB_MBON",
+      "target": "SOC_P1",
+      "synapses": 224,
+      "edges": 77
+    },
+    {
+      "source": "MB_MBON",
+      "target": "SOC_AGG",
+      "synapses": 1,
+      "edges": 1
+    },
+    {
+      "source": "MB_MBON",
+      "target": "DN_LUNGE",
+      "synapses": 386,
+      "edges": 12
+    },
+    {
+      "source": "MB_DAN",
+      "target": "OLF_DA1",
+      "synapses": 1,
+      "edges": 1
+    },
+    {
+      "source": "MB_DAN",
+      "target": "CX_EPG",
+      "synapses": 7,
+      "edges": 5
+    },
+    {
+      "source": "MB_DAN",
+      "target": "CX_FB",
+      "synapses": 111,
+      "edges": 42
+    },
+    {
+      "source": "MB_DAN",
+      "target": "MB_KC",
+      "synapses": 223045,
+      "edges": 127599
+    },
+    {
+      "source": "MB_DAN",
+      "target": "MB_MBON",
+      "synapses": 39616,
+      "edges": 3123
+    },
+    {
+      "source": "MB_DAN",
+      "target": "MB_DAN",
+      "synapses": 9521,
+      "edges": 5319
+    },
+    {
+      "source": "MB_DAN",
+      "target": "SOC_MAL",
+      "synapses": 148,
+      "edges": 60
+    },
+    {
+      "source": "MB_DAN",
+      "target": "SOC_P1",
+      "synapses": 48,
+      "edges": 43
+    },
+    {
+      "source": "MB_DAN",
+      "target": "SOC_AGG",
+      "synapses": 1,
+      "edges": 1
+    },
+    {
+      "source": "MB_DAN",
+      "target": "DN_LUNGE",
+      "synapses": 1,
+      "edges": 1
+    },
+    {
+      "source": "SOC_MAL",
+      "target": "VIS_LC10",
+      "synapses": 63,
+      "edges": 43
+    },
+    {
+      "source": "SOC_MAL",
+      "target": "VIS_LC4",
+      "synapses": 174,
+      "edges": 47
+    },
+    {
+      "source": "SOC_MAL",
+      "target": "OLF_DA1",
+      "synapses": 11,
+      "edges": 7
+    },
+    {
+      "source": "SOC_MAL",
+      "target": "CX_EPG",
+      "synapses": 1,
+      "edges": 1
+    },
+    {
+      "source": "SOC_MAL",
+      "target": "CX_FB",
+      "synapses": 107,
+      "edges": 36
+    },
+    {
+      "source": "SOC_MAL",
+      "target": "MB_KC",
+      "synapses": 35,
+      "edges": 26
+    },
+    {
+      "source": "SOC_MAL",
+      "target": "MB_MBON",
+      "synapses": 2368,
+      "edges": 182
+    },
+    {
+      "source": "SOC_MAL",
+      "target": "MB_DAN",
+      "synapses": 1487,
+      "edges": 359
+    },
+    {
+      "source": "SOC_MAL",
+      "target": "SOC_MAL",
+      "synapses": 29566,
+      "edges": 5166
+    },
+    {
+      "source": "SOC_MAL",
+      "target": "SOC_P1",
+      "synapses": 18651,
+      "edges": 3026
+    },
+    {
+      "source": "SOC_MAL",
+      "target": "SOC_AGG",
+      "synapses": 779,
+      "edges": 162
+    },
+    {
+      "source": "SOC_MAL",
+      "target": "DN_LUNGE",
+      "synapses": 306,
+      "edges": 55
+    },
+    {
+      "source": "SOC_P1",
+      "target": "VIS_LC10",
+      "synapses": 2272,
+      "edges": 1063
+    },
+    {
+      "source": "SOC_P1",
+      "target": "VIS_LC4",
+      "synapses": 1981,
+      "edges": 952
+    },
+    {
+      "source": "SOC_P1",
+      "target": "VIS_LC11",
+      "synapses": 329,
+      "edges": 183
+    },
+    {
+      "source": "SOC_P1",
+      "target": "CX_EPG",
+      "synapses": 4,
+      "edges": 1
+    },
+    {
+      "source": "SOC_P1",
+      "target": "CX_PEN",
+      "synapses": 4,
+      "edges": 2
+    },
+    {
+      "source": "SOC_P1",
+      "target": "CX_FB",
+      "synapses": 11,
+      "edges": 3
+    },
+    {
+      "source": "SOC_P1",
+      "target": "MB_KC",
+      "synapses": 1,
+      "edges": 1
+    },
+    {
+      "source": "SOC_P1",
+      "target": "MB_MBON",
+      "synapses": 296,
+      "edges": 81
+    },
+    {
+      "source": "SOC_P1",
+      "target": "MB_DAN",
+      "synapses": 565,
+      "edges": 211
+    },
+    {
+      "source": "SOC_P1",
+      "target": "SOC_MAL",
+      "synapses": 12827,
+      "edges": 1997
+    },
+    {
+      "source": "SOC_P1",
+      "target": "SOC_P1",
+      "synapses": 61263,
+      "edges": 21507
+    },
+    {
+      "source": "SOC_P1",
+      "target": "SOC_AGG",
+      "synapses": 1947,
+      "edges": 361
+    },
+    {
+      "source": "SOC_P1",
+      "target": "DN_LUNGE",
+      "synapses": 620,
+      "edges": 82
+    },
+    {
+      "source": "SOC_AGG",
+      "target": "VIS_LC10",
+      "synapses": 1,
+      "edges": 1
+    },
+    {
+      "source": "SOC_AGG",
+      "target": "MB_DAN",
+      "synapses": 1,
+      "edges": 1
+    },
+    {
+      "source": "SOC_AGG",
+      "target": "SOC_MAL",
+      "synapses": 62,
+      "edges": 38
+    },
+    {
+      "source": "SOC_AGG",
+      "target": "SOC_P1",
+      "synapses": 997,
+      "edges": 338
+    },
+    {
+      "source": "SOC_AGG",
+      "target": "SOC_AGG",
+      "synapses": 2677,
+      "edges": 581
+    },
+    {
+      "source": "SOC_AGG",
+      "target": "DN_WALK",
+      "synapses": 5,
+      "edges": 3
+    },
+    {
+      "source": "SOC_AGG",
+      "target": "DN_TURN",
+      "synapses": 2,
+      "edges": 2
+    },
+    {
+      "source": "SOC_AGG",
+      "target": "DN_LUNGE",
+      "synapses": 171,
+      "edges": 37
+    },
+    {
+      "source": "SOC_AGG",
+      "target": "DN_FEED",
+      "synapses": 12,
+      "edges": 6
+    },
+    {
+      "source": "DN_WALK",
+      "target": "DN_WALK",
+      "synapses": 947,
+      "edges": 215
+    },
+    {
+      "source": "DN_WALK",
+      "target": "DN_TURN",
+      "synapses": 90,
+      "edges": 51
+    },
+    {
+      "source": "DN_WALK",
+      "target": "DN_SONG",
+      "synapses": 43,
+      "edges": 31
+    },
+    {
+      "source": "DN_WALK",
+      "target": "DN_LUNGE",
+      "synapses": 142,
+      "edges": 39
+    },
+    {
+      "source": "DN_WALK",
+      "target": "DN_FEED",
+      "synapses": 195,
+      "edges": 44
+    },
+    {
+      "source": "DN_TURN",
+      "target": "DN_WALK",
+      "synapses": 89,
+      "edges": 58
+    },
+    {
+      "source": "DN_TURN",
+      "target": "DN_TURN",
+      "synapses": 1824,
+      "edges": 317
+    },
+    {
+      "source": "DN_TURN",
+      "target": "DN_SONG",
+      "synapses": 1,
+      "edges": 1
+    },
+    {
+      "source": "DN_TURN",
+      "target": "DN_LUNGE",
+      "synapses": 130,
+      "edges": 76
+    },
+    {
+      "source": "DN_TURN",
+      "target": "DN_FEED",
+      "synapses": 8,
+      "edges": 7
+    },
+    {
+      "source": "DN_SONG",
+      "target": "DN_WALK",
+      "synapses": 33,
+      "edges": 22
+    },
+    {
+      "source": "DN_SONG",
+      "target": "DN_TURN",
+      "synapses": 1,
+      "edges": 1
+    },
+    {
+      "source": "DN_SONG",
+      "target": "DN_SONG",
+      "synapses": 525,
+      "edges": 138
+    },
+    {
+      "source": "DN_SONG",
+      "target": "DN_LUNGE",
+      "synapses": 42,
+      "edges": 19
+    },
+    {
+      "source": "DN_SONG",
+      "target": "DN_FEED",
+      "synapses": 4,
+      "edges": 4
+    },
+    {
+      "source": "DN_LUNGE",
+      "target": "VIS_LC4",
+      "synapses": 1,
+      "edges": 1
+    },
+    {
+      "source": "DN_LUNGE",
+      "target": "CHE_PHERO",
+      "synapses": 9,
+      "edges": 7
+    },
+    {
+      "source": "DN_LUNGE",
+      "target": "MB_MBON",
+      "synapses": 17,
+      "edges": 8
+    },
+    {
+      "source": "DN_LUNGE",
+      "target": "SOC_MAL",
+      "synapses": 244,
+      "edges": 106
+    },
+    {
+      "source": "DN_LUNGE",
+      "target": "SOC_P1",
+      "synapses": 347,
+      "edges": 82
+    },
+    {
+      "source": "DN_LUNGE",
+      "target": "SOC_AGG",
+      "synapses": 49,
+      "edges": 21
+    },
+    {
+      "source": "DN_LUNGE",
+      "target": "DN_WALK",
+      "synapses": 53,
+      "edges": 28
+    },
+    {
+      "source": "DN_LUNGE",
+      "target": "DN_TURN",
+      "synapses": 371,
+      "edges": 139
+    },
+    {
+      "source": "DN_LUNGE",
+      "target": "DN_SONG",
+      "synapses": 13,
+      "edges": 12
+    },
+    {
+      "source": "DN_LUNGE",
+      "target": "DN_LUNGE",
+      "synapses": 1930,
+      "edges": 561
+    },
+    {
+      "source": "DN_LUNGE",
+      "target": "DN_FEED",
+      "synapses": 27,
+      "edges": 11
+    },
+    {
+      "source": "DN_LUNGE",
+      "target": "DN_ESCAPE",
+      "synapses": 38,
+      "edges": 17
+    },
+    {
+      "source": "DN_FEED",
+      "target": "SOC_AGG",
+      "synapses": 1,
+      "edges": 1
+    },
+    {
+      "source": "DN_FEED",
+      "target": "DN_WALK",
+      "synapses": 8,
+      "edges": 7
+    },
+    {
+      "source": "DN_FEED",
+      "target": "DN_TURN",
+      "synapses": 12,
+      "edges": 8
+    },
+    {
+      "source": "DN_FEED",
+      "target": "DN_SONG",
+      "synapses": 11,
+      "edges": 6
+    },
+    {
+      "source": "DN_FEED",
+      "target": "DN_LUNGE",
+      "synapses": 43,
+      "edges": 15
+    },
+    {
+      "source": "DN_FEED",
+      "target": "DN_FEED",
+      "synapses": 77,
+      "edges": 39
+    },
+    {
+      "source": "DN_ESCAPE",
+      "target": "DN_LUNGE",
+      "synapses": 2,
+      "edges": 2
+    },
+    {
+      "source": "DN_ESCAPE",
+      "target": "DN_ESCAPE",
+      "synapses": 1935,
+      "edges": 313
+    }
+  ]
+}

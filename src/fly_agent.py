@@ -417,18 +417,22 @@ class FruitFlyAgent:
         # X walls
         if self.x < margin:
             self.x = margin
-            self.heading = math.pi - self.heading + random.uniform(-0.2, 0.2)
+            self.vx = abs(self.vx) * 0.6
+            self.heading = math.atan2(self.vy, self.vx) + random.uniform(-0.2, 0.2)
         elif self.x > env.width - margin:
             self.x = env.width - margin
-            self.heading = math.pi - self.heading + random.uniform(-0.2, 0.2)
+            self.vx = -abs(self.vx) * 0.6
+            self.heading = math.atan2(self.vy, self.vx) + random.uniform(-0.2, 0.2)
             
         # Y walls
         if self.y < margin:
             self.y = margin
-            self.heading = -self.heading + random.uniform(-0.2, 0.2)
+            self.vy = abs(self.vy) * 0.6
+            self.heading = math.atan2(self.vy, self.vx) + random.uniform(-0.2, 0.2)
         elif self.y > env.depth - margin:
             self.y = env.depth - margin
-            self.heading = -self.heading + random.uniform(-0.2, 0.2)
+            self.vy = -abs(self.vy) * 0.6
+            self.heading = math.atan2(self.vy, self.vx) + random.uniform(-0.2, 0.2)
             
         # Floor & Ceiling (Z): Ground clearance anchored at Z >= 1.6mm
         if self.z < 1.6:

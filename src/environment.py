@@ -202,7 +202,7 @@ class SimulationEnvironment:
                     grad_dx, grad_dy, grad_dz = dx/d, dy/d, dz/d
         return min_dist, nearest, (grad_dx, grad_dy, grad_dz)
 
-    def consume_food_3d(self, x, y, z, max_intake=0.04):
+    def consume_food_3d(self, x, y, z, max_intake=0.15):
         """Consumes food in 3D contact and computes the DOPAMINE REWARD."""
         for fp in self.food_patches:
             if fp["amount"] <= 0:
@@ -211,10 +211,12 @@ class SimulationEnvironment:
             dy = y - fp["y"]
             dz = z - fp["z"]
             dist_xy = math.hypot(dx, dy)
-            if dist_xy <= fp["radius"] and abs(dz) <= (fp["height"] + 2.0):
+            reach_r = fp["radius"] + 5.0
+            reach_h = fp["height"] + 4.0
+            if dist_xy <= reach_r and abs(dz) <= reach_h:
                 eaten = min(fp["amount"], max_intake)
                 fp["amount"] -= eaten
-                dopamine_surge = eaten * fp["sugar_quality"] * 2.5
+                dopamine_surge = min(1.0, eaten * fp["sugar_quality"] * 3.5)
                 return eaten, dopamine_surge, fp["label"]
         return 0.0, 0.0, None
 
@@ -545,16 +547,23 @@ class SimulationEnvironment:
             self.running_wheel["angular_vel"] = 0.0
 
         # Hanging Moss Swing damped harmonic oscillator with subtle vivarium breeze
-        k_swing = 14.0
-        damping = 0.75
+        # Sub-stepped semi-implicit Euler for rock-solid stability even under large dt_sec
+        k_swing = 12.0
+        damping = 1.6
         self.swing_breeze_timer = getattr(self, 'swing_breeze_timer', 0.0) + dt_sec
         breeze_x = 0.08 * math.sin(self.swing_breeze_timer * 1.4)
         breeze_y = 0.05 * math.cos(self.swing_breeze_timer * 1.1)
 
-        self.hanging_swing["vel_x"] += (-k_swing * self.hanging_swing["angle_x"] - damping * self.hanging_swing["vel_x"] + breeze_x) * dt_sec
-        self.hanging_swing["angle_x"] += self.hanging_swing["vel_x"] * dt_sec
-        self.hanging_swing["vel_y"] += (-k_swing * self.hanging_swing["angle_y"] - damping * self.hanging_swing["vel_y"] + breeze_y) * dt_sec
-        self.hanging_swing["angle_y"] += self.hanging_swing["vel_y"] * dt_sec
+        sub_steps = max(1, min(25, int(math.ceil(dt_sec / 0.02))))
+        sub_dt = dt_sec / sub_steps
+        for _ in range(sub_steps):
+            self.hanging_swing["vel_x"] += (-k_swing * self.hanging_swing["angle_x"] - damping * self.hanging_swing["vel_x"] + breeze_x) * sub_dt
+            self.hanging_swing["angle_x"] += self.hanging_swing["vel_x"] * sub_dt
+            self.hanging_swing["angle_x"] = max(-0.45, min(0.45, self.hanging_swing["angle_x"]))
+
+            self.hanging_swing["vel_y"] += (-k_swing * self.hanging_swing["angle_y"] - damping * self.hanging_swing["vel_y"] + breeze_y) * sub_dt
+            self.hanging_swing["angle_y"] += self.hanging_swing["vel_y"] * sub_dt
+            self.hanging_swing["angle_y"] = max(-0.45, min(0.45, self.hanging_swing["angle_y"]))
 
     def to_dict(self):
         """Serializes 3D environment for Three.js rendering."""

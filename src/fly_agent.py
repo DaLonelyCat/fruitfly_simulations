@@ -131,6 +131,8 @@ class FruitFlyAgent:
         self.entertainment = 0.5       # 0.0 (Bored) to 1.0 (Entertained)
         self.attack_cooldown = random.uniform(1.0, 3.0)
         self.is_perched_on_swing = False
+        self.exercise_timer = 0
+        self.swing_timer = 0
 
         # Metabolic & Dopamine State
         self.satiety = 0.6             # 0.0 (starving) to 1.0 (full)
@@ -258,14 +260,28 @@ class FruitFlyAgent:
             if hasattr(env, 'running_wheel'):
                 wheel = env.running_wheel
                 dist_wheel = math.hypot(self.x - wheel["x"], self.y - wheel["y"])
-                if dist_wheel < (wheel["radius"] + 3.0) and abs(self.z - wheel["z"]) < 8.0:
-                    run_spd = max(3.5, math.hypot(self.vx, self.vy))
-                    wheel["angular_vel"] = min(20.0, wheel["angular_vel"] + run_spd * dt_sec * 6.0)
-                    self.entertainment = min(1.0, self.entertainment + 0.65 * dt_sec)
-                    self.mood = min(1.0, self.mood + 0.35 * dt_sec)
-                    self.dopamine_level = min(1.0, self.dopamine_level + 0.20 * dt_sec)
+                
+                # Check if stepping onto wheel or currently running on it
+                if dist_wheel < (wheel["radius"] + 4.5) and abs(self.z - wheel["z"]) < 8.0:
+                    if getattr(self, 'exercise_timer', 0) <= 0 and random.random() < 0.65:
+                        self.exercise_timer = random.randint(70, 140)  # ~2.5 - 4.5 seconds of sustained fun workout
+                
+                if getattr(self, 'exercise_timer', 0) > 0:
+                    self.exercise_timer -= 1
+                    # Secure fly to running wheel base
+                    self.x = wheel["x"]
+                    self.y = wheel["y"]
+                    self.z = 1.6
+                    self.vx = 0.0
+                    self.vy = 0.0
+                    self.vz = 0.0
+                    self.tripod_phase = (self.tripod_phase + dt_sec * 24.0) % (2 * math.pi)
+                    wheel["angular_vel"] = min(22.0, wheel["angular_vel"] + 14.0 * dt_sec)
+                    self.entertainment = min(1.0, self.entertainment + 0.45 * dt_sec * 60 * 0.016 + 0.005)
+                    self.mood = min(1.0, self.mood + 0.40 * dt_sec)
+                    self.dopamine_level = min(1.0, self.dopamine_level + 0.30 * dt_sec)
                     self.last_action_tag = "exercising"
-                    self.brain.last_thought = "Exercising on running wheel! Dopamine surge, feeling great!"
+                    self.brain.last_thought = "Exercising on running wheel! Rapid kinetic workout, feeling energized and happy!"
                     on_playground = True
 
         # B. Hanging Moss Swing at (110, 95, 26)
@@ -277,19 +293,21 @@ class FruitFlyAgent:
             dist_to_seat = math.sqrt((self.x - swing_x)**2 + (self.y - swing_y)**2 + (self.z - swing_z)**2)
 
             # Airborne flight wake pushes the swing
-            if self.is_airborne and dist_to_seat < 12.0:
-                swing["vel_x"] += (self.vx * 0.04) + random.uniform(-0.02, 0.02)
-                swing["vel_y"] += (self.vy * 0.04) + random.uniform(-0.02, 0.02)
+            if self.is_airborne and dist_to_seat < 14.0:
+                swing["vel_x"] += (self.vx * 0.05) + random.uniform(-0.02, 0.02)
+                swing["vel_y"] += (self.vy * 0.05) + random.uniform(-0.02, 0.02)
                 self.entertainment = min(1.0, self.entertainment + 0.40 * dt_sec)
-                # Landing on moss seat disc
-                if dist_to_seat < 6.5 and abs(self.z - swing_z) < 4.0:
+                # Opportunity to land on moss seat disc
+                if dist_to_seat < 7.5 and abs(self.z - swing_z) < 5.0:
                     self.is_airborne = False
                     self.flight_timer = 0
                     self.is_perched_on_swing = True
+                    self.swing_timer = random.randint(80, 160)  # ~3 - 5 seconds of relaxing swinging!
 
-            # If perched or landing on moss seat
+            # If perched on moss seat
             if getattr(self, 'is_perched_on_swing', False):
-                if random.random() < (0.015 * dt_sec * 60):
+                self.swing_timer = getattr(self, 'swing_timer', 60) - 1
+                if self.swing_timer <= 0:
                     self.is_perched_on_swing = False
                     self.is_airborne = True
                     self.flight_timer = random.randint(45, 90)
@@ -305,23 +323,24 @@ class FruitFlyAgent:
                     self.roll = swing["angle_y"] * 0.4
                     self.pitch = swing["angle_x"] * 0.4
                     self.last_action_tag = "swinging"
-                    self.entertainment = min(1.0, self.entertainment + 0.65 * dt_sec)
+                    self.entertainment = min(1.0, self.entertainment + 0.40 * dt_sec * 60 * 0.016 + 0.005)
                     self.mood = min(1.0, self.mood + 0.35 * dt_sec)
-                    self.dopamine_level = min(1.0, self.dopamine_level + 0.15 * dt_sec)
+                    self.dopamine_level = min(1.0, self.dopamine_level + 0.20 * dt_sec)
                     self.brain.last_thought = "Perched on the hanging moss swing! Swaying back and forth in the breeze."
                     on_playground = True
-                    swing["vel_x"] += random.uniform(-0.05, 0.05) * dt_sec
-                    swing["vel_y"] += random.uniform(-0.05, 0.05) * dt_sec
-            elif not self.is_airborne and dist_to_seat < 6.0:
+                    swing["vel_x"] += random.uniform(-0.06, 0.06) * dt_sec
+                    swing["vel_y"] += random.uniform(-0.06, 0.06) * dt_sec
+            elif not self.is_airborne and dist_to_seat < 6.5:
                 self.is_perched_on_swing = True
+                self.swing_timer = random.randint(80, 160)
                 self.last_action_tag = "swinging"
-                self.entertainment = min(1.0, self.entertainment + 0.15)
-                self.mood = min(1.0, self.mood + 0.10)
+                self.entertainment = min(1.0, self.entertainment + 0.30)
+                self.mood = min(1.0, self.mood + 0.20)
                 on_playground = True
 
         # Attacks in Bad Mood (mood < 0.28)
         self.attack_cooldown = max(0.0, self.attack_cooldown - dt_sec)
-        if self.mood < 0.28 and self.attack_cooldown <= 0.0 and nearest_fly and min_dist < 12.0:
+        if not on_playground and self.mood < 0.28 and self.attack_cooldown <= 0.0 and nearest_fly and min_dist < 12.0:
             self.is_lunging = True
             self.lunge_timer = 15
             self.last_action_tag = "lunging"
@@ -330,8 +349,9 @@ class FruitFlyAgent:
             dx = nearest_fly.x - self.x
             dy = nearest_fly.y - self.y
             d_norm = math.hypot(dx, dy) + 0.001
-            self.vx += (dx / d_norm) * 32.0
-            self.vy += (dy / d_norm) * 32.0
+            self.heading = math.atan2(dy, dx)
+            self.vx = (dx / d_norm) * 38.0
+            self.vy = (dy / d_norm) * 38.0
             env.record_fight(self, nearest_fly)
             self.attack_cooldown = random.uniform(2.5, 4.0)
             self.brain.last_thought = f"Irritable & enraged! Lunging attack at Fly {nearest_fly.id} ({nearest_fly.archetype_name})!"
@@ -342,8 +362,37 @@ class FruitFlyAgent:
             if self.dopamine_surge_timer <= 0:
                 self.dopamine_surge_active = False
 
-        # A. Emergency Escape (Giant Fiber Activation -> 3D Takeoff)
-        if motor_commands["escape"] > 0.22 or self.is_escaping:
+        near_food = (food_dist < 20.0) and (food_dist < 990.0)
+        can_feed = (near_food and self.satiety < 0.95) or (motor_commands["feed"] > 0.15 and food_dist < 24.0)
+
+        if on_playground:
+            self.is_singing = False
+            self.proboscis_extended = max(0.0, self.proboscis_extended - 0.1)
+
+        # A. Aggressive Lunge (DNg02 Strike)
+        elif self.is_lunging or motor_commands["lunge"] > 0.20:
+            if not self.is_lunging:
+                self.is_lunging = True
+                self.lunge_timer = 12
+                self.fights_initiated += 1
+                if nearest_fly:
+                    self.heading += rel_angle * 0.85
+                    
+            self.lunge_timer -= 1
+            lunge_speed = 52.0
+            self.vx = math.cos(self.heading) * lunge_speed
+            self.vy = math.sin(self.heading) * lunge_speed
+            self.last_action_tag = "lunging"
+            self.proboscis_extended = max(0.0, self.proboscis_extended - 0.1)
+            
+            if nearest_fly and min_dist < 4.0:
+                env.record_fight(self, nearest_fly)
+                
+            if self.lunge_timer <= 0:
+                self.is_lunging = False
+
+        # B. Emergency Escape (Giant Fiber Activation -> 3D Takeoff)
+        elif motor_commands["escape"] > 0.22 or self.is_escaping:
             if not self.is_escaping:
                 self.is_escaping = True
                 self.is_airborne = True
@@ -357,35 +406,43 @@ class FruitFlyAgent:
             self.vx = math.cos(self.heading) * escape_speed
             self.vy = math.sin(self.heading) * escape_speed
             self.last_action_tag = "escaping"
+            self.proboscis_extended = max(0.0, self.proboscis_extended - 0.1)
             if self.escape_timer <= 0:
                 self.is_escaping = False
-                
-        # B. Aggressive Lunge (DNg02 Strike)
-        elif motor_commands["lunge"] > 0.20 or self.is_lunging:
-            if not self.is_lunging:
-                self.is_lunging = True
-                self.lunge_timer = 12
-                self.fights_initiated += 1
-                if nearest_fly:
-                    self.heading += rel_angle * 0.85
-                    
-            self.lunge_timer -= 1
-            lunge_speed = 52.0
-            self.vx = math.cos(self.heading) * lunge_speed
-            self.vy = math.sin(self.heading) * lunge_speed
-            self.last_action_tag = "lunging"
+
+        # C. Feeding & Proboscis Extension Reflex (PER)
+        elif can_feed:
+            self.is_singing = False
+            self.proboscis_extended = min(1.0, self.proboscis_extended + 0.35)
+            self.vx *= 0.2
+            self.vy *= 0.2
+            self.vz *= 0.2
+            self.last_action_tag = "feeding"
             
-            if nearest_fly and min_dist < 4.0:
-                env.record_fight(self, nearest_fly)
-                
-            if self.lunge_timer <= 0:
-                self.is_lunging = False
-                
-        # C. Courtship Pursuit & Wing Vibration Song (P1 & DNpe008)
+            # Consume food in 3D and receive Dopamine reward
+            eaten, dopamine_surge, food_label = env.consume_food_3d(self.x, self.y, self.z, max_intake=0.15)
+            if eaten > 0:
+                self.food_eaten_total += eaten
+                # Rapid, satisfying satiety replenishment
+                self.satiety = min(1.0, self.satiety + 0.25 * dt_sec * 60 * 0.016 + 0.008)
+                self.mood = min(1.0, self.mood + 0.40 * dt_sec)
+                self.dopamine_level = min(1.0, self.dopamine_level + 0.30 * dt_sec)
+                self.brain.personality["dopamine"] = self.dopamine_level
+                self.brain.firing_rates[self.brain.pop_idx["MB_DAN"]] = 0.95
+                self.dopamine_surge_active = True
+                self.dopamine_surge_timer = 15
+                self.brain.last_thought = f"Yeast/sugar ({food_label}) consumed! Satiety rising, feeling refreshed and content."
+            else:
+                # Close proximity feeding contact
+                self.satiety = min(1.0, self.satiety + 0.006)
+                self.mood = min(1.0, self.mood + 0.20 * dt_sec)
+
+        # D. Courtship Pursuit & Wing Vibration Song (P1 & DNpe008)
         elif motor_commands["song"] > 0.18:
             self.is_singing = True
             self.song_pulse_timer += 1
             self.last_action_tag = "courting"
+            self.proboscis_extended = max(0.0, self.proboscis_extended - 0.1)
             
             # Unilateral wing extension to 85-90 degrees
             if rel_angle > 0:
@@ -415,34 +472,6 @@ class FruitFlyAgent:
                 env.record_courtship(self, nearest_fly)
                 self.courtship_bouts += 1
 
-        # D. Feeding & DOPAMINE REWARD Surge (DN_FEED & MB_DAN Activation)
-        elif motor_commands["feed"] > 0.20 and food_dist < 14.0:
-            self.proboscis_extended = min(1.0, self.proboscis_extended + 0.2)
-            self.vx *= 0.4
-            self.vy *= 0.4
-            self.vz *= 0.4
-            self.last_action_tag = "feeding"
-            
-            # Consume food in 3D and receive Dopamine reward
-            eaten, dopamine_surge, food_label = env.consume_food_3d(self.x, self.y, self.z, max_intake=0.035)
-            if eaten > 0:
-                self.food_eaten_total += eaten
-                self.satiety = min(1.0, self.satiety + eaten * 0.8)
-                self.mood = min(1.0, self.mood + 0.28 * dopamine_surge)
-                
-                # INJECT DOPAMINE INTO BRAIN:
-                # Elevates dopamine level, stimulating PAM dopaminergic cluster (MB_DAN)
-                self.dopamine_level = min(1.0, self.dopamine_level + dopamine_surge)
-                self.brain.personality["dopamine"] = self.dopamine_level
-                self.brain.firing_rates[self.brain.pop_idx["MB_DAN"]] = 0.95
-                
-                # Visual Dopamine Surge flag
-                self.dopamine_surge_active = True
-                self.dopamine_surge_timer = 20  # ~300ms visual particle duration
-                
-                # Update Fly Mind thought
-                self.brain.last_thought = f"Yeast/sugar ({food_label}) consumed! Dopamine surge (+{dopamine_surge:.2f})! PAM cluster radiating reward."
-
         # E. 3D Locomotion (Walking on surfaces vs 3D Flight)
         else:
             self.is_singing = False
@@ -457,19 +486,25 @@ class FruitFlyAgent:
                 self.wing_stroke_phase = (self.wing_stroke_phase + dt_sec * 45.0) % (2 * math.pi)
                 
                 # Steer toward food or explore
-                turn_noise = random.gauss(0, 0.3)
-                if food_grad and self.brain.personality["hunger"] > 0.35:
+                turn_noise = random.gauss(0, 0.25)
+                if food_grad and (self.satiety < 0.75 or self.brain.personality.get("hunger", 0.0) > 0.25):
                     target_yaw = math.atan2(food_grad[1], food_grad[0])
                     steer_diff = (target_yaw - self.heading + math.pi) % (2 * math.pi) - math.pi
-                    self.angular_velocity = steer_diff * 2.0 + turn_noise
-                    # Adjust altitude toward food Z
-                    self.vz = food_grad[2] * 18.0
+                    self.angular_velocity = steer_diff * 3.2 + turn_noise
+                    self.vz = max(-18.0, min(18.0, food_grad[2] * 22.0))
+                elif self.entertainment < 0.65 and self.satiety > 0.30:
+                    swing_dx = 110.0 - self.x
+                    swing_dy = 95.0 - self.y
+                    target_yaw = math.atan2(swing_dy, swing_dx)
+                    steer_diff = (target_yaw - self.heading + math.pi) % (2 * math.pi) - math.pi
+                    self.angular_velocity = steer_diff * 3.0 + turn_noise
+                    self.vz = max(-16.0, min(16.0, (26.0 - self.z) * 0.75))
                 else:
                     self.angular_velocity = (motor_commands["turn_bias"] - 0.5) * 4.5 + turn_noise
                     self.vz += random.uniform(-2.0, 1.8)
                     
                 self.heading += self.angular_velocity * dt_sec
-                flight_speed = 32.0 * (0.6 + 0.8 * self.dopamine_level)  # dopamine increases flight vigor
+                flight_speed = 32.0 * (0.6 + 0.8 * self.dopamine_level)
                 target_vx = math.cos(self.heading) * flight_speed
                 target_vy = math.sin(self.heading) * flight_speed
                 accel = min(1.0, 14.0 * dt_sec)
@@ -503,16 +538,28 @@ class FruitFlyAgent:
                     self.flight_timer = random.randint(35, 80)
                     self.vz = 22.0
                     
-                turn_noise = random.gauss(0, 0.35)
-                if food_grad and self.brain.personality["hunger"] > 0.4:
+                turn_noise = random.gauss(0, 0.25)
+                if food_grad and (self.satiety < 0.75 or self.brain.personality.get("hunger", 0.0) > 0.25):
                     target_yaw = math.atan2(food_grad[1], food_grad[0])
                     steer_diff = (target_yaw - self.heading + math.pi) % (2 * math.pi) - math.pi
-                    self.angular_velocity = steer_diff * 1.8 + turn_noise
+                    self.angular_velocity = steer_diff * 3.2 + turn_noise
+                    walk_speed = 22.0
+                elif self.entertainment < 0.65 and self.satiety > 0.30:
+                    wheel_dx = 45.0 - self.x
+                    wheel_dy = 140.0 - self.y
+                    target_yaw = math.atan2(wheel_dy, wheel_dx)
+                    steer_diff = (target_yaw - self.heading + math.pi) % (2 * math.pi) - math.pi
+                    self.angular_velocity = steer_diff * 3.0 + turn_noise
+                    walk_speed = 20.0
+                    if random.random() < 0.015:
+                        self.is_airborne = True
+                        self.flight_timer = random.randint(40, 80)
+                        self.vz = 22.0
                 else:
                     self.angular_velocity = (motor_commands["turn_bias"] - 0.5) * 4.0 + turn_noise
+                    walk_speed = motor_commands["walk"] * 24.0 * (0.7 + 0.6 * self.dopamine_level)
                     
                 self.heading += self.angular_velocity * dt_sec
-                walk_speed = motor_commands["walk"] * 24.0 * (0.7 + 0.6 * self.dopamine_level)
                 target_vx = math.cos(self.heading) * walk_speed
                 target_vy = math.sin(self.heading) * walk_speed
                 accel = min(1.0, 16.0 * dt_sec)
@@ -565,8 +612,8 @@ class FruitFlyAgent:
         if self.gender == "male" and not self.is_airborne:
             env.deposit_cva_3d(self.x, self.y, self.z, amount=0.08)
             
-        # Metabolic decay & Starvation damage
-        self.satiety = max(0.0, self.satiety - 0.00035 * dt_sec * 60)
+        # Metabolic decay & Hunger
+        self.satiety = max(0.0, self.satiety - 0.00012 * dt_sec * 60)
         self.brain.personality["hunger"] = max(0.0, min(1.0, 1.0 - self.satiety))
 
         if self.satiety <= 0.02:
@@ -575,13 +622,13 @@ class FruitFlyAgent:
             self.health = 100.0
 
         # Entertainment decay & Dynamic Mood Dynamics
-        self.entertainment = max(0.0, self.entertainment - 0.008 * dt_sec)
+        self.entertainment = max(0.0, self.entertainment - 0.005 * dt_sec)
         if self.satiety < 0.25:
-            self.mood = max(0.0, self.mood - 0.045 * dt_sec)
+            self.mood = max(0.0, self.mood - 0.035 * dt_sec)
         if self.entertainment < 0.20:
-            self.mood = max(0.0, self.mood - 0.025 * dt_sec)
+            self.mood = max(0.0, self.mood - 0.020 * dt_sec)
         if self.satiety > 0.60 and self.entertainment > 0.50:
-            self.mood = min(1.0, self.mood + 0.02 * dt_sec)
+            self.mood = min(1.0, self.mood + 0.025 * dt_sec)
 
     def to_dict(self):
         """Serializes 3D fly state for Three.js network rendering."""

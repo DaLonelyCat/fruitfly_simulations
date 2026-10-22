@@ -50,7 +50,7 @@ class SimulationEnvironment:
             }
         ]
         
-        # 3D Food Patches (Banana, Sugar, Yeast)
+        # 3D Naturalistic Vivarium Food Patches (Rotting Fig, Bruised Grapes, Banana, Sugar)
         self.food_patches = [
             {
                 "id": 1,
@@ -64,20 +64,29 @@ class SimulationEnvironment:
             {
                 "id": 2,
                 "x": 150.0, "y": 60.0, "z": 22.0,  # on the elevated platform
-                "radius": 8.0, "height": 8.0,
-                "amount": 90.0,
-                "sugar_quality": 1.3,  # high dopamine reward
-                "type": "sugar_cube",
-                "label": "Crystalline Sugar Cube"
+                "radius": 13.0, "height": 7.0,
+                "amount": 110.0,
+                "sugar_quality": 1.25,  # rich fermenting fig with seeds
+                "type": "rotting_fig",
+                "label": "Fermenting Rotting Fig"
             },
             {
                 "id": 3,
                 "x": 140.0, "y": 150.0, "z": 0.0,
-                "radius": 10.0, "height": 2.5,
-                "amount": 80.0,
-                "sugar_quality": 0.9,
-                "type": "yeast_agar",
-                "label": "Fermenting Yeast Drop"
+                "radius": 10.0, "height": 6.0,
+                "amount": 95.0,
+                "sugar_quality": 1.15,
+                "type": "bruised_grapes",
+                "label": "Bruised Vineyard Grapes"
+            },
+            {
+                "id": 4,
+                "x": 50.0, "y": 150.0, "z": 0.0,
+                "radius": 8.0, "height": 8.0,
+                "amount": 90.0,
+                "sugar_quality": 1.3,
+                "type": "sugar_cube",
+                "label": "Crystalline Sugar Cube"
             }
         ]
         
@@ -96,9 +105,17 @@ class SimulationEnvironment:
 
     def add_food_patch_3d(self, x, y, z=0.0, food_type="banana_slice", amount=90.0):
         new_id = max([fp["id"] for fp in self.food_patches], default=0) + 1
-        sugar_val = 1.3 if food_type == "sugar_cube" else 1.0
-        h = 8.0 if food_type == "sugar_cube" else 3.5
-        r = 8.0 if food_type == "sugar_cube" else 11.0
+        if food_type == "sugar_cube":
+            sugar_val, h, r, label = 1.3, 8.0, 8.0, "Crystalline Sugar Cube"
+        elif food_type == "rotting_fig":
+            sugar_val, h, r, label = 1.25, 7.0, 13.0, "Fermenting Rotting Fig"
+        elif food_type == "bruised_grapes":
+            sugar_val, h, r, label = 1.15, 6.0, 10.0, "Bruised Vineyard Grapes"
+        elif food_type == "yeast_agar":
+            sugar_val, h, r, label = 0.9, 2.5, 10.0, "Fermenting Yeast Drop"
+        else: # banana_slice
+            sugar_val, h, r, label = 1.0, 3.5, 12.0, "Ripe Banana Slice"
+
         self.food_patches.append({
             "id": new_id,
             "x": float(x),
@@ -109,7 +126,7 @@ class SimulationEnvironment:
             "amount": float(amount),
             "sugar_quality": sugar_val,
             "type": food_type,
-            "label": "Fresh Banana Slice" if food_type == "banana_slice" else "Sugar Cube"
+            "label": label
         })
         return new_id
 

@@ -67,6 +67,20 @@ class ConnectomeBrain:
         self.last_thought = "Exploring arena."
         self.thought_timer = 0
         
+        # Optogenetic direct neural stimulation channels
+        self.opto_stimuli = {}
+        
+    def inject_optogenetic_stimulus(self, pop_name, intensity=2.5, duration_ms=300):
+        """Injects artificial photocurrent into a specific connectome population."""
+        if pop_name in self.pop_idx:
+            self.opto_stimuli[pop_name] = {
+                "intensity": float(intensity),
+                "remaining_ms": float(duration_ms)
+            }
+            # Special feedback for thought stream
+            pop_clean = pop_name.replace("SOC_", "").replace("VIS_", "").replace("DN_", "")
+            self.last_thought = f"OPTOGENETIC STIMULATION: Photostimulating {pop_clean} ({intensity:.1f}nA)!"
+
     def set_personality(self, **kwargs):
         self.personality.update(kwargs)
 
@@ -142,6 +156,19 @@ class ConnectomeBrain:
         # Contact Chemoreceptors (ppk23 / ppk25 foreleg tapping)
         chemo_p = sensory_inputs.get("chemo_tap_pheromones", 0.0)
         I_sensory[self.pop_idx["CHE_PHERO"]] = min(2.5, chemo_p * 2.5)
+        
+        # Optogenetic Photostimulation Current Injections
+        if self.opto_stimuli:
+            expired_opto = []
+            for pop, stim in self.opto_stimuli.items():
+                if pop in self.pop_idx:
+                    idx = self.pop_idx[pop]
+                    I_sensory[idx] += stim["intensity"]
+                    stim["remaining_ms"] -= dt_ms
+                    if stim["remaining_ms"] <= 0:
+                        expired_opto.append(pop)
+            for pop in expired_opto:
+                del self.opto_stimuli[pop]
         
         # 2. Neuromodulatory & Genetic Biases on Connectome Synaptic Matrix
         # W_eff is modulated in real-time by neurotransmitter levels

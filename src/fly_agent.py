@@ -55,6 +55,13 @@ class FruitFlyAgent:
             "color": "#b388ff",  # soft royal violet
             "description": "Selective female. Emits cuticular aphrodisiacs without cVA; evaluates male courtship songs.",
             "personality": {"dopamine": 0.5, "octopamine": 0.3, "serotonin": 0.6, "fruitless": 0.1, "fear": 0.3, "hunger": 0.5}
+        },
+        "Curly": {
+            "name": "Curly",
+            "gender": "female",
+            "color": "#eab308",  # vibrant golden amber
+            "description": "Curly-winged mutant female (Curly_Female.obj). Features sculpted curved wings, faceted red ommatidia, and balanced exploratory tone.",
+            "personality": {"dopamine": 0.65, "octopamine": 0.35, "serotonin": 0.65, "fruitless": 0.15, "fear": 0.25, "hunger": 0.45}
         }
     }
 
@@ -136,6 +143,10 @@ class FruitFlyAgent:
         self.vz = max(18.0, (altitude_target - self.z) * 0.8)
         self.last_action_tag = "flying"
         self.brain.last_thought = f"Flight motor initiated! Lift generated -> Climbing to {altitude_target:.0f}mm."
+
+    def stimulate_neuropil(self, pop_name, intensity=2.5, duration_ms=350):
+        """Optogenetic current injection into specific connectome population."""
+        self.brain.inject_optogenetic_stimulus(pop_name, intensity, duration_ms)
 
     def update_sensors_and_brain(self, env, other_flies, dt_sec=0.016):
 

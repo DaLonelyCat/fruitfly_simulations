@@ -35,6 +35,9 @@
         <button id="btn-add-fly" class="btn btn-secondary" title="Spawn New Fly in 3D Space" aria-label="Spawn New Fly in 3D Space">
           + Add Fly
         </button>
+        <button id="btn-fullscreen" class="btn btn-secondary" title="Toggle Fullscreen Mode (Press F)" aria-label="Toggle Fullscreen Mode">
+          ⛶ Fullscreen
+        </button>
       </div>
     </header>
 
@@ -45,12 +48,26 @@
         <div class="panel-header">
           <div class="panel-title-group">
             <h2 class="panel-heading">3D Behavioral Terrarium</h2>
-            <span class="panel-tag">200mm x 200mm x 100mm Flight Chamber • Interactive 3D Objects & Food</span>
+            <span class="panel-tag">Naturalistic Orchard Vivarium • 200mm x 200mm x 100mm Habitat</span>
           </div>
+          <div class="header-action-group">
+            <button id="btn-maximize-arena" class="tool-btn btn-maximize" title="Maximize Terrarium (Focus View)">⛶ Maximize</button>
+          </div>
+        </div>
+
+        <div class="arena-tools-bar">
+          <div class="cam-modes-group" title="Camera Mode (Press 'C' to cycle)">
+            <button id="cam-orbit" class="tool-btn active" title="Free 3D Orbit Inspection">Orbit Cam</button>
+            <button id="cam-follow" class="tool-btn" title="Smooth 3D Third-Person Chase Cam">Follow Fly</button>
+            <button id="cam-wasd" class="tool-btn" title="WASD Free Flight (WASD + Space/Shift)">WASD Freecam</button>
+          </div>
+
           <div class="arena-tools">
             <button id="tool-select" class="tool-btn active" title="Select and Inspect 3D Fly">Inspect</button>
-            <button id="tool-banana" class="tool-btn" title="Click terrarium to drop ripe banana slice (+Dopamine)">Drop Banana</button>
-            <button id="tool-sugar" class="tool-btn" title="Click terrarium to place crystalline sugar cube (++Dopamine)">Drop Sugar</button>
+            <button id="tool-fig" class="tool-btn" title="Drop split rotting fig with golden seeds (+Dopamine)">Drop Fig</button>
+            <button id="tool-grapes" class="tool-btn" title="Place bruised vineyard grapes (+Dopamine)">Drop Grapes</button>
+            <button id="tool-banana" class="tool-btn" title="Drop ripe banana slice (+Dopamine)">Drop Banana</button>
+            <button id="tool-sugar" class="tool-btn" title="Place crystalline sugar cube (++Dopamine)">Drop Sugar</button>
             <button id="tool-remove-food" class="tool-btn" title="Click food in terrarium to remove it">Remove Food</button>
             <button id="btn-clear-food" class="tool-btn" title="Clear all food items from terrarium">Clear All Food</button>
             <button id="btn-toggle-hitbox" class="tool-btn active" title="Toggle 3D collision hitboxes">Hitboxes: ON</button>
@@ -109,6 +126,7 @@
           <div class="fly-selector-wrapper">
             <label for="fly-select-dropdown">Select Fly:</label>
             <select id="fly-select-dropdown" class="select-input"></select>
+            <button id="btn-maximize-brain" class="tool-btn btn-maximize" title="Maximize Brain (Focus View)">⛶ Maximize</button>
           </div>
         </div>
 
@@ -122,6 +140,15 @@
           <div class="thought-text" id="fly-thought-text">
             Initializing 3D connectome dynamics...
           </div>
+        </div>
+
+        <!-- Optogenetic Photostimulation Quick Triggers -->
+        <div class="opto-stim-bar">
+          <span class="opto-label">⚡ Optogenetic Photostimulation:</span>
+          <button class="opto-btn" data-pop="SOC_P1" title="Photostimulate P1 Courtship Hub (Fruitless+)">P1 Courtship Song</button>
+          <button class="opto-btn" data-pop="MB_DAN" title="Photostimulate PAM-DAN Dopaminergic Cluster">PAM Dopamine</button>
+          <button class="opto-btn" data-pop="VIS_LC4" title="Photostimulate LC4 Looming / Giant Fiber">LC4 Escape Flight</button>
+          <button class="opto-btn" data-pop="DN_LUNGE" title="Photostimulate DNg02 Aggression Lunge">Lunge Attack</button>
         </div>
 
         <!-- Tabbed Brain Views -->
@@ -287,6 +314,7 @@
   <!-- Three.js & Application Bundles -->
   <script src="/static/lib/three.min.js"></script>
   <script src="/static/lib/OrbitControls.js"></script>
+  <script src="/static/lib/OBJLoader.js"></script>
   <script src="/static/brain_3d_view.js"></script>
   <script src="/static/arena_3d_view.js"></script>
   <script src="/static/brain_visualizer.js"></script>

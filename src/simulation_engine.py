@@ -11,7 +11,7 @@ class FruitFlySimulation:
     dopamine reward events, and WebSocket telemetry broadcasts.
     """
 
-    def __init__(self, arena_w=200.0, arena_d=200.0, arena_h=100.0, num_flies=6):
+    def __init__(self, arena_w=200.0, arena_d=200.0, arena_h=100.0, num_flies=7):
         self.arena_w = arena_w
         self.arena_d = arena_d
         self.arena_h = arena_h
@@ -22,8 +22,8 @@ class FruitFlySimulation:
         self.simulation_speed = 1.0
         self.selected_fly_id = 1
         
-        # Initialize default biological archetypes in 3D terrarium
-        default_archetypes = ["Romeo", "Brawler", "Glutton", "Skittish", "Zen", "Cleopatra"]
+        # Initialize default biological archetypes in 3D terrarium (including Curly mutant)
+        default_archetypes = ["Romeo", "Brawler", "Glutton", "Skittish", "Zen", "Cleopatra", "Curly"]
         for i, arch in enumerate(default_archetypes[:num_flies]):
             angle = (2 * math.pi * i) / num_flies
             r = 50.0
@@ -79,6 +79,13 @@ class FruitFlySimulation:
             # Trigger flight for all flies
             for f in self.flies:
                 f.trigger_flight(altitude_target=random.uniform(30.0, 70.0))
+
+    def stimulate_fly_neuropil(self, fly_id, pop_name, intensity=2.5, duration_ms=350):
+        f = self.get_fly(fly_id)
+        if f:
+            f.stimulate_neuropil(pop_name, intensity, duration_ms)
+            return True
+        return False
 
     def step(self, dt_sec=0.016):
         if self.is_paused:

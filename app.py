@@ -9,14 +9,17 @@ from src.simulation_engine import FruitFlySimulation
 app = FastAPI(title="Drosophila Connectome Multi-Agent Simulation")
 
 # Global simulation instance
-sim = FruitFlySimulation(arena_w=200.0, arena_d=200.0, arena_h=100.0, num_flies=6)
+sim = FruitFlySimulation(arena_w=200.0, arena_d=200.0, arena_h=100.0, num_flies=7)
 
 
 # Mount static files
 web_dir = Path(__file__).resolve().parent / "web"
 data_dir = Path(__file__).resolve().parent / "data"
+curly_dir = Path(__file__).resolve().parent / "CurlyWing"
 
 app.mount("/static", StaticFiles(directory=str(web_dir)), name="static")
+if curly_dir.exists():
+    app.mount("/CurlyWing", StaticFiles(directory=str(curly_dir)), name="CurlyWing")
 
 @app.get("/")
 async def get_index():
@@ -90,6 +93,13 @@ async def websocket_endpoint(websocket: WebSocket):
                     sim.trigger_flight(int(fid))
                 else:
                     sim.trigger_flight(None)
+            elif action == "stimulate_neuropil":
+                fid = msg.get("fly_id")
+                fly_id = int(fid) if fid is not None else sim.selected_fly_id
+                pop_name = msg.get("population")
+                intensity = float(msg.get("intensity", 2.5))
+                duration_ms = float(msg.get("duration_ms", 350))
+                sim.stimulate_fly_neuropil(fly_id, pop_name, intensity, duration_ms)
             elif action == "add_pheromone":
 
                 x = float(msg.get("x", 100.0))

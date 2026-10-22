@@ -16,6 +16,8 @@
   const btnAddFly = document.getElementById('btn-add-fly');
 
   const toolSelect = document.getElementById('tool-select');
+  const toolFig = document.getElementById('tool-fig');
+  const toolGrapes = document.getElementById('tool-grapes');
   const toolBanana = document.getElementById('tool-banana');
   const toolSugar = document.getElementById('tool-sugar');
   const toolRemoveFood = document.getElementById('tool-remove-food');
@@ -23,6 +25,16 @@
   const btnToggleHitbox = document.getElementById('btn-toggle-hitbox');
   const btnFlyTakeoff = document.getElementById('btn-fly-takeoff');
   const btnResetCamArena = document.getElementById('btn-reset-cam-arena');
+  const btnFullscreen = document.getElementById('btn-fullscreen');
+
+  const camOrbit = document.getElementById('cam-orbit');
+  const camFollow = document.getElementById('cam-follow');
+  const camWasd = document.getElementById('cam-wasd');
+
+  const btnMaximizeArena = document.getElementById('btn-maximize-arena');
+  const btnMaximizeBrain = document.getElementById('btn-maximize-brain');
+  const arenaViewport = document.querySelector('.arena-viewport');
+  const brainViewport = document.querySelector('.brain-viewport');
 
   const statFlyCount = document.getElementById('stat-fly-count');
   const statCourtshipCount = document.getElementById('stat-courtship-count');
@@ -221,8 +233,98 @@
       addFlyModal.classList.add('hidden');
     });
 
+    // Fullscreen Toggle
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch((err) => {
+          console.warn('Fullscreen request:', err);
+        });
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      }
+    }
+
+    if (btnFullscreen) {
+      btnFullscreen.addEventListener('click', toggleFullscreen);
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'KeyF' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+        toggleFullscreen();
+      }
+    });
+
+    // Camera Mode Switching
+    if (camOrbit) camOrbit.addEventListener('click', () => arena3D && arena3D.setCameraMode('orbit'));
+    if (camFollow) camFollow.addEventListener('click', () => arena3D && arena3D.setCameraMode('follow'));
+    if (camWasd) camWasd.addEventListener('click', () => arena3D && arena3D.setCameraMode('wasd'));
+
+    // Panel Maximize & Picture-in-Picture
+    function toggleMaximize(targetPanel) {
+      const isArena = (targetPanel === 'arena');
+      const primary = isArena ? arenaViewport : brainViewport;
+      const secondary = isArena ? brainViewport : arenaViewport;
+
+      if (!primary || !secondary) return;
+
+      if (primary.classList.contains('maximized')) {
+        primary.classList.remove('maximized');
+        secondary.classList.remove('pip-mode');
+        if (btnMaximizeArena) btnMaximizeArena.textContent = '⛶ Maximize';
+        if (btnMaximizeBrain) btnMaximizeBrain.textContent = '⛶ Maximize';
+      } else {
+        primary.classList.add('maximized');
+        primary.classList.remove('pip-mode');
+        secondary.classList.add('pip-mode');
+        secondary.classList.remove('maximized');
+        if (isArena) {
+          if (btnMaximizeArena) btnMaximizeArena.textContent = '🗗 Restore';
+          if (btnMaximizeBrain) btnMaximizeBrain.textContent = '⛶ Maximize';
+        } else {
+          if (btnMaximizeBrain) btnMaximizeBrain.textContent = '🗗 Restore';
+          if (btnMaximizeArena) btnMaximizeArena.textContent = '⛶ Maximize';
+        }
+      }
+      setTimeout(() => window.dispatchEvent(new Event('resize')), 60);
+    }
+
+    if (btnMaximizeArena) btnMaximizeArena.addEventListener('click', () => toggleMaximize('arena'));
+    if (btnMaximizeBrain) btnMaximizeBrain.addEventListener('click', () => toggleMaximize('brain'));
+
+    if (arenaViewport) {
+      arenaViewport.addEventListener('click', () => {
+        if (arenaViewport.classList.contains('pip-mode')) toggleMaximize('arena');
+      });
+    }
+    if (brainViewport) {
+      brainViewport.addEventListener('click', (e) => {
+        if (brainViewport.classList.contains('pip-mode')) toggleMaximize('brain');
+      });
+    }
+
+    // Optogenetic Stimulation Buttons
+    document.querySelectorAll('.opto-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const pop = btn.dataset.pop;
+        if (brain3D) brain3D.stimulateRegion(pop, 2.5);
+      });
+    });
+
+    window.addEventListener('brain-stimulate-neuropil', (e) => {
+      sendCommand({
+        action: 'stimulate_neuropil',
+        fly_id: selectedFlyId,
+        population: e.detail.population,
+        intensity: e.detail.intensity || 2.5
+      });
+    });
+
     // 3D Tools
     toolSelect.addEventListener('click', () => setTool('select'));
+    if (toolFig) toolFig.addEventListener('click', () => setTool('fig'));
+    if (toolGrapes) toolGrapes.addEventListener('click', () => setTool('grapes'));
     toolBanana.addEventListener('click', () => setTool('banana'));
     toolSugar.addEventListener('click', () => setTool('sugar'));
     if (toolRemoveFood) {
@@ -273,7 +375,11 @@
     });
 
     window.addEventListener('floor-click-3d', (e) => {
-      if (activeTool === 'banana') {
+      if (activeTool === 'fig') {
+        sendCommand({ action: 'add_food', x: e.detail.x, y: e.detail.y, z: e.detail.z, food_type: 'rotting_fig' });
+      } else if (activeTool === 'grapes') {
+        sendCommand({ action: 'add_food', x: e.detail.x, y: e.detail.y, z: e.detail.z, food_type: 'bruised_grapes' });
+      } else if (activeTool === 'banana') {
         sendCommand({ action: 'add_food', x: e.detail.x, y: e.detail.y, z: e.detail.z, food_type: 'banana_slice' });
       } else if (activeTool === 'sugar') {
         sendCommand({ action: 'add_food', x: e.detail.x, y: e.detail.y, z: e.detail.z, food_type: 'sugar_cube' });
@@ -333,6 +439,8 @@
   function setTool(toolName) {
     activeTool = toolName;
     toolSelect.classList.toggle('active', toolName === 'select');
+    if (toolFig) toolFig.classList.toggle('active', toolName === 'fig');
+    if (toolGrapes) toolGrapes.classList.toggle('active', toolName === 'grapes');
     toolBanana.classList.toggle('active', toolName === 'banana');
     toolSugar.classList.toggle('active', toolName === 'sugar');
     if (toolRemoveFood) {

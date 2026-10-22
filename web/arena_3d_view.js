@@ -142,10 +142,16 @@ class Arena3DView {
     // Update active HUD buttons
     ['cam-orbit', 'cam-follow', 'cam-wasd'].forEach(id => {
       const el = document.getElementById(id);
-      if (el) el.classList.remove('active');
+      if (el) {
+        el.classList.remove('active');
+        el.setAttribute('aria-pressed', 'false');
+      }
     });
     const activeEl = document.getElementById(`cam-${mode}`);
-    if (activeEl) activeEl.classList.add('active');
+    if (activeEl) {
+      activeEl.classList.add('active');
+      activeEl.setAttribute('aria-pressed', 'true');
+    }
   }
 
   buildNaturalisticSkybox() {

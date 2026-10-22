@@ -8,7 +8,7 @@
 
   // DOM Elements
   const btnPause = document.getElementById('btn-pause');
-  const pauseIcon = document.getElementById('pause-icon');
+  const pauseIconSvg = document.getElementById('pause-icon-svg');
   const pauseText = document.getElementById('pause-text');
   const speedSlider = document.getElementById('speed-slider');
   const speedVal = document.getElementById('speed-val');
@@ -262,6 +262,22 @@
     if (camWasd) camWasd.addEventListener('click', () => arena3D && arena3D.setCameraMode('wasd'));
 
     // Panel Maximize & Picture-in-Picture
+    function updateMaximizeBtn(btn, isRestoring) {
+      if (!btn) return;
+      const span = btn.querySelector('span');
+      if (span) span.textContent = isRestoring ? 'Restore' : 'Maximize';
+      btn.setAttribute('aria-label', isRestoring ? 'Restore Viewport' : 'Maximize Viewport');
+      btn.setAttribute('title', isRestoring ? 'Restore normal view' : 'Maximize view');
+      const svg = btn.querySelector('svg');
+      if (svg) {
+        if (isRestoring) {
+          svg.innerHTML = '<polyline points="4 14 10 14 10 20"></polyline><polyline points="20 10 14 10 14 4"></polyline><line x1="14" y1="10" x2="21" y2="3"></line><line x1="10" y1="14" x2="3" y2="21"></line>';
+        } else {
+          svg.innerHTML = '<polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line>';
+        }
+      }
+    }
+
     function toggleMaximize(targetPanel) {
       const isArena = (targetPanel === 'arena');
       const primary = isArena ? arenaViewport : brainViewport;
@@ -272,19 +288,19 @@
       if (primary.classList.contains('maximized')) {
         primary.classList.remove('maximized');
         secondary.classList.remove('pip-mode');
-        if (btnMaximizeArena) btnMaximizeArena.textContent = '⛶ Maximize';
-        if (btnMaximizeBrain) btnMaximizeBrain.textContent = '⛶ Maximize';
+        updateMaximizeBtn(btnMaximizeArena, false);
+        updateMaximizeBtn(btnMaximizeBrain, false);
       } else {
         primary.classList.add('maximized');
         primary.classList.remove('pip-mode');
         secondary.classList.add('pip-mode');
         secondary.classList.remove('maximized');
         if (isArena) {
-          if (btnMaximizeArena) btnMaximizeArena.textContent = '🗗 Restore';
-          if (btnMaximizeBrain) btnMaximizeBrain.textContent = '⛶ Maximize';
+          updateMaximizeBtn(btnMaximizeArena, true);
+          updateMaximizeBtn(btnMaximizeBrain, false);
         } else {
-          if (btnMaximizeBrain) btnMaximizeBrain.textContent = '🗗 Restore';
-          if (btnMaximizeArena) btnMaximizeArena.textContent = '⛶ Maximize';
+          updateMaximizeBtn(btnMaximizeBrain, true);
+          updateMaximizeBtn(btnMaximizeArena, false);
         }
       }
       setTimeout(() => window.dispatchEvent(new Event('resize')), 60);
@@ -343,6 +359,7 @@
           const nextState = !arena3D.showHitboxes;
           arena3D.toggleHitboxes(nextState);
           btnToggleHitbox.classList.toggle('active', nextState);
+          btnToggleHitbox.setAttribute('aria-pressed', nextState ? 'true' : 'false');
           btnToggleHitbox.textContent = nextState ? 'Hitboxes: ON' : 'Hitboxes: OFF';
         }
       });
@@ -438,14 +455,21 @@
 
   function setTool(toolName) {
     activeTool = toolName;
-    toolSelect.classList.toggle('active', toolName === 'select');
-    if (toolFig) toolFig.classList.toggle('active', toolName === 'fig');
-    if (toolGrapes) toolGrapes.classList.toggle('active', toolName === 'grapes');
-    toolBanana.classList.toggle('active', toolName === 'banana');
-    toolSugar.classList.toggle('active', toolName === 'sugar');
-    if (toolRemoveFood) {
-      toolRemoveFood.classList.toggle('active', toolName === 'remove_food');
-    }
+    const tools = [
+      { el: toolSelect, name: 'select' },
+      { el: toolFig, name: 'fig' },
+      { el: toolGrapes, name: 'grapes' },
+      { el: toolBanana, name: 'banana' },
+      { el: toolSugar, name: 'sugar' },
+      { el: toolRemoveFood, name: 'remove_food' }
+    ];
+    tools.forEach(({ el, name }) => {
+      if (el) {
+        const isActive = (toolName === name);
+        el.classList.toggle('active', isActive);
+        el.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      }
+    });
   }
 
   // Update UI & Telemetry
@@ -470,10 +494,14 @@
 
     // Pause button state
     if (currentState.paused) {
-      pauseIcon.textContent = '▶';
+      if (pauseIconSvg) {
+        pauseIconSvg.innerHTML = '<polygon points="7,4 19,12 7,20" fill="currentColor"></polygon>';
+      }
       pauseText.textContent = 'Resume';
     } else {
-      pauseIcon.textContent = '⏸';
+      if (pauseIconSvg) {
+        pauseIconSvg.innerHTML = '<rect x="6" y="4" width="4" height="16" rx="1"></rect><rect x="14" y="4" width="4" height="16" rx="1"></rect>';
+      }
       pauseText.textContent = 'Pause';
     }
 

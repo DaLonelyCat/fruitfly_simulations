@@ -184,6 +184,9 @@ async def simulation_loop():
         sleep_time = max(0.005, frame_interval - elapsed)
         await asyncio.sleep(sleep_time)
 
+# Mount root static files for relative asset loading
+app.mount("/", StaticFiles(directory=str(web_dir), html=True), name="root_web")
+
 @app.on_event("startup")
 async def startup_event():
     asyncio.create_task(simulation_loop())

@@ -74,7 +74,7 @@ class Arena3DView {
   loadCurlyWingModel() {
     if (!window.THREE.OBJLoader) return;
     const loader = new THREE.OBJLoader();
-    loader.load('/CurlyWing/Curly_Female.obj', (obj) => {
+    loader.load('CurlyWing/Curly_Female.obj', (obj) => {
       const box = new THREE.Box3().setFromObject(obj);
       const size = new THREE.Vector3();
       box.getSize(size);

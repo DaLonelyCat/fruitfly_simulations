@@ -64,6 +64,22 @@ class FruitFlySimulation:
             return True
         return False
 
+    def remove_food(self, food_id):
+        return self.env.remove_food_patch_3d(food_id)
+
+    def clear_food(self):
+        return self.env.clear_all_food()
+
+    def trigger_flight(self, fly_id=None):
+        if fly_id is not None:
+            f = self.get_fly(fly_id)
+            if f:
+                f.trigger_flight(altitude_target=random.uniform(35.0, 75.0))
+        else:
+            # Trigger flight for all flies
+            for f in self.flies:
+                f.trigger_flight(altitude_target=random.uniform(30.0, 70.0))
+
     def step(self, dt_sec=0.016):
         if self.is_paused:
             return
@@ -80,9 +96,13 @@ class FruitFlySimulation:
         for fly, (motor_commands, nearest_fly, min_dist, rel_angle, food_dist, food_grad) in decisions:
             fly.apply_physics(motor_commands, nearest_fly, min_dist, rel_angle, food_dist, food_grad, self.env, dt_sec=eff_dt)
             
-        # 3. Step 3D environmental dynamics
+        # 3. Resolve 3D Hitbox Collisions (Fly-Fly and Fly-Obstacle)
+        self.env.resolve_hitbox_collisions(self.flies)
+
+        # 4. Step 3D environmental dynamics
         self.env.step(dt_sec=eff_dt)
         self.step_count += 1
+
 
     def get_state(self):
         """Compiles 3D state package for WebSocket streaming to Three.js viewports."""

@@ -270,6 +270,30 @@ body {
   border-color: var(--accent-cyan);
 }
 
+.tool-btn#tool-remove-food.active {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border-color: #ef4444;
+}
+
+.tool-btn#btn-clear-food:hover {
+  background-color: rgba(239, 68, 68, 0.12);
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.tool-btn.btn-takeoff {
+  background-color: rgba(16, 185, 129, 0.12);
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.35);
+}
+
+.tool-btn.btn-takeoff:hover {
+  background-color: rgba(16, 185, 129, 0.25);
+  color: #6ee7b7;
+  border-color: #10b981;
+}
+
 .tool-btn:focus-visible {
   outline: 2px solid var(--accent-cyan);
 }

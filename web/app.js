@@ -18,6 +18,10 @@
   const toolSelect = document.getElementById('tool-select');
   const toolBanana = document.getElementById('tool-banana');
   const toolSugar = document.getElementById('tool-sugar');
+  const toolRemoveFood = document.getElementById('tool-remove-food');
+  const btnClearFood = document.getElementById('btn-clear-food');
+  const btnToggleHitbox = document.getElementById('btn-toggle-hitbox');
+  const btnFlyTakeoff = document.getElementById('btn-fly-takeoff');
   const btnResetCamArena = document.getElementById('btn-reset-cam-arena');
 
   const statFlyCount = document.getElementById('stat-fly-count');
@@ -221,6 +225,32 @@
     toolSelect.addEventListener('click', () => setTool('select'));
     toolBanana.addEventListener('click', () => setTool('banana'));
     toolSugar.addEventListener('click', () => setTool('sugar'));
+    if (toolRemoveFood) {
+      toolRemoveFood.addEventListener('click', () => setTool('remove_food'));
+    }
+
+    if (btnClearFood) {
+      btnClearFood.addEventListener('click', () => {
+        sendCommand({ action: 'clear_food' });
+      });
+    }
+
+    if (btnToggleHitbox) {
+      btnToggleHitbox.addEventListener('click', () => {
+        if (arena3D) {
+          const nextState = !arena3D.showHitboxes;
+          arena3D.toggleHitboxes(nextState);
+          btnToggleHitbox.classList.toggle('active', nextState);
+          btnToggleHitbox.textContent = nextState ? 'Hitboxes: ON' : 'Hitboxes: OFF';
+        }
+      });
+    }
+
+    if (btnFlyTakeoff) {
+      btnFlyTakeoff.addEventListener('click', () => {
+        sendCommand({ action: 'trigger_flight', fly_id: selectedFlyId });
+      });
+    }
 
     btnResetCamArena.addEventListener('click', () => {
       if (arena3D && arena3D.camera && arena3D.controls) {
@@ -234,6 +264,12 @@
     window.addEventListener('select-fly-3d', (e) => {
       selectedFlyId = e.detail.flyId;
       sendCommand({ action: 'select_fly', fly_id: selectedFlyId });
+    });
+
+    window.addEventListener('food-click-3d', (e) => {
+      if (activeTool === 'remove_food') {
+        sendCommand({ action: 'remove_food', food_id: e.detail.foodId });
+      }
     });
 
     window.addEventListener('floor-click-3d', (e) => {
@@ -299,6 +335,9 @@
     toolSelect.classList.toggle('active', toolName === 'select');
     toolBanana.classList.toggle('active', toolName === 'banana');
     toolSugar.classList.toggle('active', toolName === 'sugar');
+    if (toolRemoveFood) {
+      toolRemoveFood.classList.toggle('active', toolName === 'remove_food');
+    }
   }
 
   // Update UI & Telemetry

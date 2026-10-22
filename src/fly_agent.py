@@ -92,13 +92,19 @@ class FruitFlyAgent:
         self.tripod_phase = random.uniform(0, 2 * math.pi)
         self.wing_stroke_phase = 0.0
         
+        # 3D Hitbox Dimensions (mm)
+        self.hitbox_radius = 1.8
+        self.hitbox_length = 3.6
+        
         # Articulated Appendages
         self.wing_left_angle = 12.0    # resting angle ~12 deg
         self.wing_right_angle = 12.0
+        self.haltere_phase = 0.0       # gyroscopic haltere oscillation
         self.is_singing = False
         self.singing_wing = "right"
         self.song_pulse_timer = 0
         self.proboscis_extended = 0.0  # 0.0 to 1.0
+
         
         # Behavioral Action Flags
         self.is_lunging = False
@@ -123,7 +129,16 @@ class FruitFlyAgent:
         self.fights_won = 0
         self.current_target_id = None
 
+    def trigger_flight(self, altitude_target=50.0):
+        """Forces the fly to launch into 3D flight toward altitude_target."""
+        self.is_airborne = True
+        self.flight_timer = random.randint(80, 160) # airborne for 2-3 seconds
+        self.vz = max(18.0, (altitude_target - self.z) * 0.8)
+        self.last_action_tag = "flying"
+        self.brain.last_thought = f"Flight motor initiated! Lift generated -> Climbing to {altitude_target:.0f}mm."
+
     def update_sensors_and_brain(self, env, other_flies, dt_sec=0.016):
+
         """Calculates 3D sensory receptive fields and executes the connectome brain."""
         # 1. 3D Nearest Fly Detection
         nearest_fly = None
@@ -431,7 +446,9 @@ class FruitFlyAgent:
             "pitch": round(self.pitch, 3),
             "roll": round(self.roll, 3),
             "speed": round(self.speed, 2),
+            "hitbox": {"radius": self.hitbox_radius, "length": self.hitbox_length},
             "is_airborne": self.is_airborne,
+
             "action": self.last_action_tag,
             "is_singing": self.is_singing,
             "singing_wing": self.singing_wing,

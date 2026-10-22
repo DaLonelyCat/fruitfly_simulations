@@ -6,11 +6,11 @@ class SimulationEnvironment:
     """
     3D Physical Drosophila Behavior Arena (200mm x 200mm x 100mm).
     Simulates:
-    - 3D Terrarium with floor, glass walls, ceiling, and air volume for flight.
-    - 3D Interactive Objects: Climbing perches, elevated twigs, food platforms.
-    - 3D Food Objects (Banana slices, sugar cubes, yeast drops) emitting 3D odor plumes.
-    - Dopamine Reward System: Consuming sugar/nutrients directly triggers PAM dopaminergic influx.
-    - 3D Pheromone and Acoustic Pulse fields.
+    - 3D Terrarium with floor, glass walls, ceiling, and 3D flight airspace.
+    - 3D Interactive Objects: Climbing perches, elevated twigs, food pedestals.
+    - 3D Food Objects (Banana slices, sugar cubes, yeast drops) with removal support.
+    - 3D Hitboxes and physical collision resolution for all flies and obstacles.
+    - Dopamine Reward System: Sugar consumption activates PAM dopaminergic influx.
     """
 
     def __init__(self, width=200.0, depth=200.0, height=100.0):
@@ -29,7 +29,7 @@ class SimulationEnvironment:
                 "color": "#6e4a2e",
                 "label": "Climbing Perch"
             },
-            # Horizontal twig A extending from perch
+            # Horizontal twig branch extending from perch
             {
                 "id": "twig_a",
                 "type": "branch",
@@ -55,18 +55,18 @@ class SimulationEnvironment:
             {
                 "id": 1,
                 "x": 60.0, "y": 60.0, "z": 0.0,
-                "radius": 12.0, "height": 3.0,
+                "radius": 12.0, "height": 3.5,
                 "amount": 100.0,
-                "sugar_quality": 1.0,  # multiplier for dopamine reward
+                "sugar_quality": 1.0,
                 "type": "banana_slice",
                 "label": "Ripe Banana Slice"
             },
             {
                 "id": 2,
                 "x": 150.0, "y": 60.0, "z": 22.0,  # on the elevated platform
-                "radius": 9.0, "height": 4.0,
+                "radius": 8.0, "height": 8.0,
                 "amount": 90.0,
-                "sugar_quality": 1.2,  # high dopamine reward
+                "sugar_quality": 1.3,  # high dopamine reward
                 "type": "sugar_cube",
                 "label": "Crystalline Sugar Cube"
             },
@@ -82,7 +82,6 @@ class SimulationEnvironment:
         ]
         
         # 3D Pheromone Traces (cVA deposited on surfaces)
-        # List of dicts: {"x", "y", "z", "amount", "life"}
         self.pheromone_traces = []
         
         # 3D Acoustic Near-Field Pulse Waves
@@ -96,21 +95,35 @@ class SimulationEnvironment:
         self.interaction_matrix = {}
 
     def add_food_patch_3d(self, x, y, z=0.0, food_type="banana_slice", amount=90.0):
-        new_id = len(self.food_patches) + 1
-        sugar_val = 1.2 if food_type == "sugar_cube" else 1.0
+        new_id = max([fp["id"] for fp in self.food_patches], default=0) + 1
+        sugar_val = 1.3 if food_type == "sugar_cube" else 1.0
+        h = 8.0 if food_type == "sugar_cube" else 3.5
+        r = 8.0 if food_type == "sugar_cube" else 11.0
         self.food_patches.append({
             "id": new_id,
             "x": float(x),
             "y": float(y),
             "z": float(z),
-            "radius": 11.0,
-            "height": 3.0,
+            "radius": r,
+            "height": h,
             "amount": float(amount),
             "sugar_quality": sugar_val,
             "type": food_type,
-            "label": "Fresh Banana Slice" if food_type == "banana_slice" else "Sugar Drop"
+            "label": "Fresh Banana Slice" if food_type == "banana_slice" else "Sugar Cube"
         })
         return new_id
+
+    def remove_food_patch_3d(self, food_id):
+        """Removes a specific food patch by ID."""
+        initial_len = len(self.food_patches)
+        self.food_patches = [fp for fp in self.food_patches if fp["id"] != int(food_id)]
+        return len(self.food_patches) < initial_len
+
+    def clear_all_food(self):
+        """Removes all food patches from the terrarium."""
+        removed_count = len(self.food_patches)
+        self.food_patches = []
+        return removed_count
 
     def get_food_odor_3d(self, x, y, z):
         """Calculates 3D diffusing fermenting food odor intensity at (x, y, z)."""
@@ -122,7 +135,6 @@ class SimulationEnvironment:
             dy = y - fp["y"]
             dz = z - fp["z"]
             dist_sq = dx*dx + dy*dy + dz*dz
-            # Characteristic 3D plume diffusion (~40mm)
             odor = math.exp(-dist_sq / (2 * 40.0 * 40.0)) * (fp["amount"] / 100.0)
             total_odor += odor
         return min(1.0, total_odor)
@@ -147,14 +159,10 @@ class SimulationEnvironment:
         return min_dist, nearest, (grad_dx, grad_dy, grad_dz)
 
     def consume_food_3d(self, x, y, z, max_intake=0.04):
-        """
-        Consumes food in 3D contact and computes the DOPAMINE REWARD.
-        Returns: (eaten_amount, dopamine_surge, food_label)
-        """
+        """Consumes food in 3D contact and computes the DOPAMINE REWARD."""
         for fp in self.food_patches:
             if fp["amount"] <= 0:
                 continue
-            # Distance in 3D
             dx = x - fp["x"]
             dy = y - fp["y"]
             dz = z - fp["z"]
@@ -162,7 +170,6 @@ class SimulationEnvironment:
             if dist_xy <= fp["radius"] and abs(dz) <= (fp["height"] + 2.0):
                 eaten = min(fp["amount"], max_intake)
                 fp["amount"] -= eaten
-                # Dopamine surge formula: proportional to intake and sugar nutritional quality
                 dopamine_surge = eaten * fp["sugar_quality"] * 2.5
                 return eaten, dopamine_surge, fp["label"]
         return 0.0, 0.0, None
@@ -203,6 +210,68 @@ class SimulationEnvironment:
                 max_int = max(max_int, w["intensity"])
         return max_int
 
+    def resolve_hitbox_collisions(self, flies):
+        """
+        Calculates physical 3D hitbox collisions between flies and obstacles.
+        Hitbox: 3D bounding capsule with radius ~1.8mm.
+        """
+        hitbox_r = 1.8
+        min_sep = hitbox_r * 2.0
+
+        # Fly-Fly Collisions
+        for i in range(len(flies)):
+            f1 = flies[i]
+            for j in range(i + 1, len(flies)):
+                f2 = flies[j]
+                dx = f2.x - f1.x
+                dy = f2.y - f1.y
+                dz = f2.z - f1.z
+                dist = math.sqrt(dx*dx + dy*dy + dz*dz)
+                if dist < min_sep and dist > 0.001:
+                    # Overlap detected: displace each fly along collision normal
+                    overlap = min_sep - dist
+                    nx, ny, nz = dx / dist, dy / dist, dz / dist
+                    half_overlap = overlap * 0.5
+                    f1.x -= nx * half_overlap
+                    f1.y -= ny * half_overlap
+                    f1.z -= nz * half_overlap
+                    f2.x += nx * half_overlap
+                    f2.y += ny * half_overlap
+                    f2.z += nz * half_overlap
+                    
+                    # Elastic momentum transfer
+                    rel_vx = f1.vx - f2.vx
+                    rel_vy = f1.vy - f2.vy
+                    rel_vz = f1.vz - f2.vz
+                    dot = rel_vx * nx + rel_vy * ny + rel_vz * nz
+                    if dot > 0:
+                        f1.vx -= dot * nx * 0.5
+                        f1.vy -= dot * ny * 0.5
+                        f1.vz -= dot * nz * 0.5
+                        f2.vx += dot * nx * 0.5
+                        f2.vy += dot * ny * 0.5
+                        f2.vz += dot * nz * 0.5
+
+        # Fly-Perch Cylinder Collisions
+        perch = self.objects[0] # central climbing branch
+        px, py = perch["x"], perch["y"]
+        pr = perch["radius"]
+        ph = perch["height"]
+
+        for f in flies:
+            dx = f.x - px
+            dy = f.y - py
+            dist_xy = math.hypot(dx, dy)
+            if dist_xy < (pr + hitbox_r) and 0 <= f.z <= (ph + hitbox_r):
+                # Repel outwards horizontally or land on perch
+                if dist_xy > 0.001:
+                    norm_x = dx / dist_xy
+                    norm_y = dy / dist_xy
+                    f.x = px + norm_x * (pr + hitbox_r)
+                    f.y = py + norm_y * (pr + hitbox_r)
+                    f.vx = 0.0
+                    f.vy = 0.0
+
     def record_courtship(self, suitor, target):
         event = {
             "type": "courtship",
@@ -235,7 +304,6 @@ class SimulationEnvironment:
         if len(self.fight_events) > 100:
             self.fight_events.pop(0)
             
-        # Target fly is pushed back
         push_dx = target.x - aggressor.x
         push_dy = target.y - aggressor.y
         push_dz = target.z - aggressor.z
@@ -251,7 +319,6 @@ class SimulationEnvironment:
 
     def step(self, dt_sec=0.016):
         """Simulates 3D environmental dynamics."""
-        # 1. Decay pheromone traces
         alive_p = []
         for p in self.pheromone_traces:
             p["life"] -= 1
@@ -260,7 +327,6 @@ class SimulationEnvironment:
                 alive_p.append(p)
         self.pheromone_traces = alive_p[-120:]
         
-        # 2. Propagate 3D acoustic song pulses
         alive_w = []
         for w in self.acoustic_waves_3d:
             w["radius"] += 45.0 * dt_sec

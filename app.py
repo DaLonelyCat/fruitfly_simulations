@@ -79,7 +79,19 @@ async def websocket_endpoint(websocket: WebSocket):
                 z = float(msg.get("z", 0.0))
                 food_type = msg.get("food_type", "banana_slice")
                 sim.env.add_food_patch_3d(x, y, z=z, food_type=food_type, amount=90.0)
+            elif action == "remove_food":
+                fid = int(msg.get("food_id"))
+                sim.remove_food(fid)
+            elif action == "clear_food":
+                sim.clear_food()
+            elif action == "trigger_flight":
+                fid = msg.get("fly_id")
+                if fid is not None:
+                    sim.trigger_flight(int(fid))
+                else:
+                    sim.trigger_flight(None)
             elif action == "add_pheromone":
+
                 x = float(msg.get("x", 100.0))
                 y = float(msg.get("y", 100.0))
                 z = float(msg.get("z", 0.0))

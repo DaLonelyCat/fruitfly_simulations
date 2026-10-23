@@ -170,72 +170,35 @@ class Arena3DView {
   }
 
   buildNaturalisticSkybox() {
-    // Natural Organic Orchard Canopy Skybox
-    const skyGeom = new THREE.BoxGeometry(800, 800, 500);
+    // 3D Photographic Environmental Skybox from skybox/ (posx, negx, posy, negy, posz, negz)
+    const loader = new THREE.TextureLoader();
 
-    const createCanopyTexture = (faceType) => {
-      const cv = document.createElement('canvas');
-      cv.width = 512;
-      cv.height = 512;
-      const ctx = cv.getContext('2d');
-
-      if (faceType === 'top') {
-        // Overhead orchard foliage canopy with dappled sunlight
-        const grad = ctx.createRadialGradient(256, 256, 30, 256, 256, 320);
-        grad.addColorStop(0, '#fef08a');
-        grad.addColorStop(0.35, '#84cc16');
-        grad.addColorStop(0.75, '#166534');
-        grad.addColorStop(1, '#052e16');
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, 512, 512);
-
-        // Dappled leaf shadows
-        ctx.fillStyle = 'rgba(5, 46, 22, 0.45)';
-        for (let i = 0; i < 90; i++) {
-          const lx = Math.random() * 512;
-          const ly = Math.random() * 512;
-          const lr = Math.random() * 35 + 15;
-          ctx.beginPath();
-          ctx.arc(lx, ly, lr, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      } else if (faceType === 'bottom') {
-        // Deep forest loam
-        ctx.fillStyle = '#1c130d';
-        ctx.fillRect(0, 0, 512, 512);
-      } else {
-        // Horizon: gentle distant orchard trees and soft atmosphere
-        const grad = ctx.createLinearGradient(0, 0, 0, 512);
-        grad.addColorStop(0, '#14532d');
-        grad.addColorStop(0.45, '#1e3a1e');
-        grad.addColorStop(0.75, '#2e241c');
-        grad.addColorStop(1, '#1c130d');
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, 512, 512);
-
-        // Distant fruit tree trunks
-        ctx.fillStyle = 'rgba(28, 19, 13, 0.6)';
-        for (let i = 0; i < 8; i++) {
-          ctx.fillRect(40 + i * 60, 200, 18, 312);
-        }
-      }
-
-      const tex = new THREE.CanvasTexture(cv);
-      return new THREE.MeshBasicMaterial({ map: tex, side: THREE.BackSide });
-    };
-
-    const mats = [
-      createCanopyTexture('side'),
-      createCanopyTexture('side'),
-      createCanopyTexture('side'),
-      createCanopyTexture('side'),
-      createCanopyTexture('top'),
-      createCanopyTexture('bottom')
+    // Order in Three.js BoxGeometry: [right (+X), left (-X), top (+Y), bottom (-Y), front (+Z), back (-Z)]
+    const faceFiles = [
+      'skybox/posx.jpg',
+      'skybox/negx.jpg',
+      'skybox/posy.jpg', // Sky (brightest)
+      'skybox/negy.jpg', // Ground
+      'skybox/posz.jpg',
+      'skybox/negz.jpg'
     ];
 
+    const mats = faceFiles.map(file => {
+      const tex = loader.load(file);
+      return new THREE.MeshBasicMaterial({
+        map: tex,
+        side: THREE.BackSide,
+        depthWrite: false
+      });
+    });
+
+    const skyGeom = new THREE.BoxGeometry(900, 900, 900);
     const skybox = new THREE.Mesh(skyGeom, mats);
-    skybox.position.set(100, 100, 100);
+    skybox.position.set(100, 100, 50);
+    // Rotate so local +Y (posy.jpg, sky) aligns with world +Z (ceiling/up)
+    skybox.rotation.x = Math.PI / 2;
     this.scene.add(skybox);
+    this.skyboxMesh = skybox;
   }
 
   initLighting() {
@@ -731,9 +694,9 @@ class Arena3DView {
 
     // 3 Mid-Century Modern Plush Armchairs Facing TV
     const chairConfigs = [
-      { id: 'chair_left', x: 65, y: 42, yaw: -1.2, color: 0x047857 },   // Emerald Green
-      { id: 'chair_center', x: 75, y: 44, yaw: -1.57, color: 0x1d4ed8 }, // Royal Blue
-      { id: 'chair_right', x: 85, y: 42, yaw: -1.94, color: 0xbe123c }  // Velvet Ruby
+      { id: 'chair_left', x: 65, y: 42, yaw: -2.6345, color: 0x047857 },   // Angled inward toward TV
+      { id: 'chair_center', x: 75, y: 44, yaw: Math.PI, color: 0x1d4ed8 }, // Straight toward TV
+      { id: 'chair_right', x: 85, y: 42, yaw: 2.6345, color: 0xbe123c }    // Angled inward toward TV
     ];
 
     chairConfigs.forEach(cfg => {
@@ -1690,6 +1653,9 @@ class Arena3DView {
 
     // 4. Camera Update
     this.updateCamera(dt);
+    if (this.skyboxMesh && this.camera) {
+      this.skyboxMesh.position.copy(this.camera.position);
+    }
 
     // 5. Dopamine Particles
     const aliveParticles = [];
@@ -1728,54 +1694,142 @@ class Arena3DView {
     this.renderer.render(this.scene, this.camera);
   }
 
+  setTvCoverArt(imageUrl, title) {
+    if (!imageUrl) return;
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      this.tvCoverImage = img;
+      if (title) this.tvTrackTitle = title;
+    };
+    img.src = imageUrl;
+  }
+
   renderTvScreen(t) {
     const ctx = this.tvCtx;
     const w = 256;
     const h = 192;
 
-    // Dark CRT background with subtle blue-green tint
+    // Dark vintage CRT background
     ctx.fillStyle = '#061118';
     ctx.fillRect(0, 0, w, h);
 
-    // Glowing TV Title
-    ctx.fillStyle = '#38bdf8';
-    ctx.font = 'bold 15px monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText('SPOTIFY CHILL BEATS', w / 2, 26);
+    if (this.tvCoverImage) {
+      // 1. Draw Album Cover Art on Left Side (105x105)
+      const ax = 14, ay = 18, asize = 105, ar = 8;
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(ax + ar, ay);
+      ctx.lineTo(ax + asize - ar, ay);
+      ctx.quadraticCurveTo(ax + asize, ay, ax + asize, ay + ar);
+      ctx.lineTo(ax + asize, ay + asize - ar);
+      ctx.quadraticCurveTo(ax + asize, ay + asize, ax + asize - ar, ay + asize);
+      ctx.lineTo(ax + ar, ay + asize);
+      ctx.quadraticCurveTo(ax, ay + asize, ax, ay + asize - ar);
+      ctx.lineTo(ax, ay + ar);
+      ctx.quadraticCurveTo(ax, ay, ax + ar, ay);
+      ctx.closePath();
+      ctx.clip();
+      ctx.drawImage(this.tvCoverImage, ax, ay, asize, asize);
+      ctx.restore();
 
-    // Animated Spectrum Equalizer Bars
-    const numBars = 10;
-    const barW = 16;
-    const gap = 6;
-    const startX = (w - (numBars * barW + (numBars - 1) * gap)) / 2;
-    const maxBarH = 105;
+      // Border around album art
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+      ctx.strokeRect(ax, ay, asize, asize);
 
-    for (let i = 0; i < numBars; i++) {
-      const freq = 2.8 + i * 1.3;
-      const pulse = Math.sin(t * freq + i * 0.9);
-      const pulse2 = Math.cos(t * (freq * 0.7) - i * 0.5);
-      const barH = Math.max(14, (pulse * 0.35 + pulse2 * 0.35 + 0.5) * maxBarH);
-      const bx = startX + i * (barW + gap);
-      const by = 158 - barH;
+      // 2. Right Side Track Info & Metadata
+      ctx.fillStyle = '#10b981';
+      ctx.font = 'bold 11px monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText('SPOTIFY LIVE', 132, 34);
 
-      const grad = ctx.createLinearGradient(0, by, 0, 158);
-      grad.addColorStop(0, '#10b981'); // Neon emerald
-      grad.addColorStop(0.4, '#06b6d4'); // Cyan
-      grad.addColorStop(1, '#6366f1'); // Indigo
-      ctx.fillStyle = grad;
-      ctx.fillRect(bx, by, barW, barH);
+      // Truncate track title to fit in available width
+      ctx.fillStyle = '#f8fafc';
+      ctx.font = 'bold 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+      const maxTitleW = 112;
+      let displayTitle = this.tvTrackTitle || 'Now Playing';
+      if (ctx.measureText(displayTitle).width > maxTitleW) {
+        while (displayTitle.length > 3 && ctx.measureText(displayTitle + '...').width > maxTitleW) {
+          displayTitle = displayTitle.slice(0, -1);
+        }
+        displayTitle += '...';
+      }
+      ctx.fillText(displayTitle, 132, 54);
 
-      // Peak floating indicator cap
-      ctx.fillStyle = '#fef08a';
-      ctx.fillRect(bx, by - 3.5, barW, 2.5);
+      // Sound Wave icon / mini equalizer beside cover
+      const miniBars = 6;
+      for (let i = 0; i < miniBars; i++) {
+        const mbH = Math.max(6, Math.sin(t * (3.5 + i * 1.5)) * 14 + 18);
+        ctx.fillStyle = '#38bdf8';
+        ctx.fillRect(132 + i * 12, 115 - mbH, 7, mbH);
+      }
+
+      // 3. Audio Equalizer Frequency Bars across bottom (y = 138 to 175)
+      const numBars = 14;
+      const barW = 12;
+      const gap = 5;
+      const startX = (w - (numBars * barW + (numBars - 1) * gap)) / 2;
+      const maxBarH = 36;
+
+      for (let i = 0; i < numBars; i++) {
+        const freq = 2.6 + i * 1.2;
+        const pulse = Math.sin(t * freq + i * 0.85);
+        const pulse2 = Math.cos(t * (freq * 0.6) - i * 0.4);
+        const barH = Math.max(6, (pulse * 0.4 + pulse2 * 0.4 + 0.5) * maxBarH);
+        const bx = startX + i * (barW + gap);
+        const by = 176 - barH;
+
+        const grad = ctx.createLinearGradient(0, by, 0, 176);
+        grad.addColorStop(0, '#10b981');
+        grad.addColorStop(0.5, '#06b6d4');
+        grad.addColorStop(1, '#6366f1');
+        ctx.fillStyle = grad;
+        ctx.fillRect(bx, by, barW, barH);
+
+        // Peak floating cap
+        ctx.fillStyle = '#fef08a';
+        ctx.fillRect(bx, by - 2.5, barW, 2);
+      }
+      ctx.fillStyle = 'rgba(56, 189, 248, 0.4)';
+      ctx.fillRect(startX - 2, 177, (numBars * (barW + gap)) - gap + 4, 1.5);
+    } else {
+      // Fallback Full Spectrum Display
+      ctx.fillStyle = '#38bdf8';
+      ctx.font = 'bold 15px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(this.tvTrackTitle || 'SPOTIFY CHILL BEATS', w / 2, 26);
+
+      const numBars = 10;
+      const barW = 16;
+      const gap = 6;
+      const startX = (w - (numBars * barW + (numBars - 1) * gap)) / 2;
+      const maxBarH = 105;
+
+      for (let i = 0; i < numBars; i++) {
+        const freq = 2.8 + i * 1.3;
+        const pulse = Math.sin(t * freq + i * 0.9);
+        const pulse2 = Math.cos(t * (freq * 0.7) - i * 0.5);
+        const barH = Math.max(14, (pulse * 0.35 + pulse2 * 0.35 + 0.5) * maxBarH);
+        const bx = startX + i * (barW + gap);
+        const by = 158 - barH;
+
+        const grad = ctx.createLinearGradient(0, by, 0, 158);
+        grad.addColorStop(0, '#10b981'); // Neon emerald
+        grad.addColorStop(0.4, '#06b6d4'); // Cyan
+        grad.addColorStop(1, '#6366f1'); // Indigo
+        ctx.fillStyle = grad;
+        ctx.fillRect(bx, by, barW, barH);
+
+        ctx.fillStyle = '#fef08a';
+        ctx.fillRect(bx, by - 3.5, barW, 2.5);
+      }
+      ctx.fillStyle = 'rgba(56, 189, 248, 0.4)';
+      ctx.fillRect(startX - 4, 159, (numBars * (barW + gap)) - gap + 8, 2);
     }
 
-    // Baseline
-    ctx.fillStyle = 'rgba(56, 189, 248, 0.4)';
-    ctx.fillRect(startX - 4, 159, (numBars * (barW + gap)) - gap + 8, 2);
-
     // Retro scanlines
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.28)';
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.26)';
     for (let y = 0; y < h; y += 4) {
       ctx.fillRect(0, y, w, 2);
     }

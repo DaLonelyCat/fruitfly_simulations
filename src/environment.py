@@ -131,9 +131,9 @@ class SimulationEnvironment:
             "is_on": True
         }
         self.lounge_chairs = [
-            {"id": "chair_left", "x": 65.0, "y": 42.0, "z": 0.0, "seat_z": 2.2, "target_yaw": -1.2, "occupied_by": None},
-            {"id": "chair_center", "x": 75.0, "y": 44.0, "z": 0.0, "seat_z": 2.2, "target_yaw": -1.57, "occupied_by": None},
-            {"id": "chair_right", "x": 85.0, "y": 42.0, "z": 0.0, "seat_z": 2.2, "target_yaw": -1.94, "occupied_by": None}
+            {"id": "chair_left", "x": 65.0, "y": 42.0, "z": 0.0, "seat_z": 2.2, "target_yaw": -1.0637, "occupied_by": None},
+            {"id": "chair_center", "x": 75.0, "y": 44.0, "z": 0.0, "seat_z": 2.2, "target_yaw": -1.5708, "occupied_by": None},
+            {"id": "chair_right", "x": 85.0, "y": 42.0, "z": 0.0, "seat_z": 2.2, "target_yaw": -2.0779, "occupied_by": None}
         ]
 
     @property

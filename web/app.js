@@ -190,7 +190,10 @@
     initWedgeBars();
     setupEvents();
 
-    // 4. Fetch initial state snapshot immediately so flies and vivarium appear without waiting
+    // 4. Load initial default Spotify TV album cover art
+    loadSpotifyOembedCover('https://open.spotify.com/playlist/37i9dQZF1DXdLEN7aqioXM', 'Lofi Hip Hop');
+
+    // 5. Fetch initial state snapshot immediately so flies and vivarium appear without waiting
     try {
       const stateRes = await fetch(`${backendConfig.httpBase}/api/state`);
       if (stateRes.ok) {
@@ -509,6 +512,26 @@
       });
     }
 
+    // Spotify Album Cover Art Loader via Public oEmbed API
+    async function loadSpotifyOembedCover(spotifyUrl, fallbackTitle) {
+      try {
+        const oembedUrl = `https://open.spotify.com/oembed?url=${encodeURIComponent(spotifyUrl)}`;
+        const res = await fetch(oembedUrl);
+        if (res.ok) {
+          const data = await res.json();
+          const trackTitle = data.title || fallbackTitle || 'Spotify Music';
+          if (spotifyCurrentTrack) {
+            spotifyCurrentTrack.textContent = trackTitle;
+          }
+          if (data.thumbnail_url && arena3D) {
+            arena3D.setTvCoverArt(data.thumbnail_url, trackTitle);
+          }
+        }
+      } catch (err) {
+        console.warn('Spotify oEmbed fetch notice:', err);
+      }
+    }
+
     // Spotify Preset Station Buttons
     document.querySelectorAll('.spotify-preset-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -516,12 +539,14 @@
         btn.classList.add('active');
         const playlistId = btn.dataset.spotifyId;
         const title = btn.dataset.title;
+        const fullUrl = `https://open.spotify.com/playlist/${playlistId}`;
         if (spotifyIframe && playlistId) {
           spotifyIframe.src = `https://open.spotify.com/embed/playlist/${playlistId}?utm_source=generator&theme=0`;
         }
         if (spotifyCurrentTrack && title) {
           spotifyCurrentTrack.textContent = title;
         }
+        loadSpotifyOembedCover(fullUrl, title);
       });
     });
 
@@ -535,11 +560,13 @@
       if (match) {
         const type = match[1];
         const id = match[2];
+        const standardUrl = `https://open.spotify.com/${type}/${id}`;
         spotifyIframe.src = `https://open.spotify.com/embed/${type}/${id}?utm_source=generator&theme=0`;
         if (spotifyCurrentTrack) {
           spotifyCurrentTrack.textContent = `Custom ${type.toUpperCase()}: ${id}`;
         }
         document.querySelectorAll('.spotify-preset-btn').forEach((b) => b.classList.remove('active'));
+        loadSpotifyOembedCover(standardUrl, `Custom ${type.toUpperCase()}`);
       } else {
         alert('Please enter a valid Spotify track, playlist, or album link (e.g. https://open.spotify.com/track/...)');
       }

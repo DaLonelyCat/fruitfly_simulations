@@ -572,6 +572,8 @@ class FruitFlyAgent:
                 
                 # Steer toward food or explore
                 turn_noise = random.gauss(0, 0.25)
+                if random.random() < 0.05:
+                    turn_noise += random.choice([-1.0, 1.0]) * random.uniform(1.2, 2.4)
                 if food_grad and (self.satiety < 0.75 or self.brain.personality.get("hunger", 0.0) > 0.25):
                     target_yaw = math.atan2(food_grad[1], food_grad[0])
                     steer_diff = (target_yaw - self.heading + math.pi) % (2 * math.pi) - math.pi
@@ -580,12 +582,17 @@ class FruitFlyAgent:
                 elif self.entertainment < 0.65 and self.satiety > 0.30:
                     swing_dx = 110.0 - self.x
                     swing_dy = 95.0 - self.y
-                    target_yaw = math.atan2(swing_dy, swing_dx)
-                    steer_diff = (target_yaw - self.heading + math.pi) % (2 * math.pi) - math.pi
-                    self.angular_velocity = steer_diff * 3.0 + turn_noise
-                    self.vz = max(-16.0, min(16.0, (26.0 - self.z) * 0.75))
+                    dist_swing = math.hypot(swing_dx, swing_dy)
+                    if dist_swing > 12.0:
+                        target_yaw = math.atan2(swing_dy, swing_dx)
+                        steer_diff = (target_yaw - self.heading + math.pi) % (2 * math.pi) - math.pi
+                        self.angular_velocity = steer_diff * 3.0 + turn_noise
+                        self.vz = max(-16.0, min(16.0, (26.0 - self.z) * 0.75))
+                    else:
+                        self.angular_velocity = motor_commands["turn_bias"] * 4.0 + turn_noise
+                        self.vz += random.uniform(-2.0, 1.8)
                 else:
-                    self.angular_velocity = (motor_commands["turn_bias"] - 0.5) * 4.5 + turn_noise
+                    self.angular_velocity = motor_commands["turn_bias"] * 4.0 + turn_noise
                     self.vz += random.uniform(-2.0, 1.8)
                     
                 self.heading += self.angular_velocity * dt_sec
@@ -624,6 +631,8 @@ class FruitFlyAgent:
                     self.vz = 22.0
                     
                 turn_noise = random.gauss(0, 0.25)
+                if random.random() < 0.05:
+                    turn_noise += random.choice([-1.0, 1.0]) * random.uniform(1.2, 2.4)
                 if food_grad and (self.satiety < 0.75 or self.brain.personality.get("hunger", 0.0) > 0.25):
                     target_yaw = math.atan2(food_grad[1], food_grad[0])
                     steer_diff = (target_yaw - self.heading + math.pi) % (2 * math.pi) - math.pi
@@ -639,16 +648,22 @@ class FruitFlyAgent:
                         target_x, target_y = 75.0, 42.0   # TV Lounge
                     wheel_dx = target_x - self.x
                     wheel_dy = target_y - self.y
-                    target_yaw = math.atan2(wheel_dy, wheel_dx)
-                    steer_diff = (target_yaw - self.heading + math.pi) % (2 * math.pi) - math.pi
-                    self.angular_velocity = steer_diff * 3.0 + turn_noise
-                    walk_speed = 20.0
+                    dist_target = math.hypot(wheel_dx, wheel_dy)
+                    if dist_target > 10.0:
+                        target_yaw = math.atan2(wheel_dy, wheel_dx)
+                        steer_diff = (target_yaw - self.heading + math.pi) % (2 * math.pi) - math.pi
+                        self.angular_velocity = steer_diff * 3.0 + turn_noise
+                        walk_speed = 20.0
+                    else:
+                        # Arrived near target attraction: explore locally with balanced turning
+                        self.angular_velocity = motor_commands["turn_bias"] * 4.0 + turn_noise
+                        walk_speed = 18.0
                     if random.random() < 0.015:
                         self.is_airborne = True
                         self.flight_timer = random.randint(40, 80)
                         self.vz = 22.0
                 else:
-                    self.angular_velocity = (motor_commands["turn_bias"] - 0.5) * 4.0 + turn_noise
+                    self.angular_velocity = motor_commands["turn_bias"] * 4.0 + turn_noise
                     walk_speed = motor_commands["walk"] * 24.0 * (0.7 + 0.6 * self.dopamine_level)
                     
                 self.heading += self.angular_velocity * dt_sec

@@ -280,9 +280,14 @@ class ConnectomeBrain:
         self._update_internal_monologue(sensory_inputs)
         
         # Return motor descending commands
+        r_turn = float(self.firing_rates[self.pop_idx["DN_TURN"]])
+        # Calibrate turn_bias relative to baseline resting rate (~0.125) so resting state yields 0.0 bias
+        r_turn_rest = 1.0 / (1.0 + np.exp(-3.0 * (-0.4 - v_thresh)))
+        calibrated_turn = float(np.clip((r_turn - r_turn_rest) * 2.0, -1.0, 1.0))
+
         return {
             "walk": float(self.firing_rates[walk_idx]),
-            "turn_bias": float(self.firing_rates[self.pop_idx["DN_TURN"]]),
+            "turn_bias": calibrated_turn,
             "song": float(self.firing_rates[song_idx]),
             "lunge": float(self.firing_rates[lunge_idx]),
             "escape": float(self.firing_rates[escape_idx]),

@@ -27,10 +27,13 @@ sim = FruitFlySimulation(arena_w=200.0, arena_d=200.0, arena_h=100.0, num_flies=
 web_dir = Path(__file__).resolve().parent / "web"
 data_dir = Path(__file__).resolve().parent / "data"
 curly_dir = Path(__file__).resolve().parent / "CurlyWing"
+skybox_dir = Path(__file__).resolve().parent / "skybox"
 
 app.mount("/static", StaticFiles(directory=str(web_dir)), name="static")
 if curly_dir.exists():
     app.mount("/CurlyWing", StaticFiles(directory=str(curly_dir)), name="CurlyWing")
+if skybox_dir.exists():
+    app.mount("/skybox", StaticFiles(directory=str(skybox_dir)), name="skybox")
 
 @app.get("/")
 async def get_index():

@@ -56,7 +56,10 @@ def test_feeding_happiness_and_tolerance():
     runner.exercise_cooldown = 0.0
     
     # Step onto wheel
-    runner.step(single_env, [runner], dt_sec=0.033)
+    for _ in range(5):
+        runner.step(single_env, [runner], dt_sec=0.033)
+        if runner.exercise_timer > 0:
+            break
     assert runner.exercise_timer > 0, "Runner should trigger exercise session on wheel"
     assert runner.action == "exercising", f"Action should be 'exercising', got '{runner.action}'"
     

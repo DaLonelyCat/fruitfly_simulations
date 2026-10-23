@@ -173,10 +173,9 @@ async def websocket_endpoint(websocket: WebSocket):
                     f.escape_timer = 25
                     
     except WebSocketDisconnect:
-        connected_clients.remove(websocket)
+        connected_clients.discard(websocket)
     except Exception:
-        if websocket in connected_clients:
-            connected_clients.remove(websocket)
+        connected_clients.discard(websocket)
 
 async def simulation_loop():
     """Background task running simulation physics and broadcasting updates at ~30 FPS."""

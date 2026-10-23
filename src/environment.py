@@ -107,6 +107,11 @@ class SimulationEnvironment:
         self.fight_events = []
         self.interaction_matrix = {}
 
+        # Cumulative lifetime event statistics
+        self.lifetime_courtships = 0
+        self.lifetime_fights = 0
+        self.lifetime_dopamine_surges = 0
+
         # Drought & Carrying Capacity Tracker
         self.drought_timer = 0.0
 
@@ -445,6 +450,7 @@ class SimulationEnvironment:
             "timestamp_step": len(self.events)
         }
         self.events.append(event)
+        self.lifetime_courtships += 1
         self.courtship_events.append(event)
         if len(self.courtship_events) > 100:
             self.courtship_events.pop(0)
@@ -462,6 +468,7 @@ class SimulationEnvironment:
             "timestamp_step": len(self.events)
         }
         self.events.append(event)
+        self.lifetime_fights += 1
         self.fight_events.append(event)
         if len(self.fight_events) > 100:
             self.fight_events.pop(0)
@@ -495,6 +502,7 @@ class SimulationEnvironment:
             "timestamp_step": len(self.events)
         }
         self.events.append(event)
+        self.lifetime_dopamine_surges += 1
         self.dopamine_events.append(event)
         if len(self.dopamine_events) > 100:
             self.dopamine_events.pop(0)
@@ -592,6 +600,10 @@ class SimulationEnvironment:
             self.hanging_swing["angle_y"] += self.hanging_swing["vel_y"] * sub_dt
             self.hanging_swing["angle_y"] = max(-0.45, min(0.45, self.hanging_swing["angle_y"]))
 
+        # 7. Prune events to prevent unbounded memory growth over long simulation runs
+        if len(self.events) > 100:
+            self.events = self.events[-100:]
+
     def to_dict(self):
         """Serializes 3D environment for Three.js rendering."""
         return {
@@ -642,8 +654,8 @@ class SimulationEnvironment:
                 for w in self.acoustic_waves_3d
             ],
             "recent_events": self.events[-12:],
-            "total_courtships": len(self.courtship_events),
-            "total_fights": len(self.fight_events),
-            "total_dopamine_surges": len(self.dopamine_events),
+            "total_courtships": self.lifetime_courtships,
+            "total_fights": self.lifetime_fights,
+            "total_dopamine_surges": self.lifetime_dopamine_surges,
             "interaction_pairs": self.interaction_matrix
         }

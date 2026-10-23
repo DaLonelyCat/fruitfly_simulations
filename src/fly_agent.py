@@ -781,7 +781,6 @@ class FruitFlyAgent:
             "wing_stroke_phase": round(self.wing_stroke_phase, 2),
             "tripod_phase": round(self.tripod_phase, 2),
             "proboscis": round(self.proboscis_extended, 2),
-            "satiety": round(self.satiety, 2),
             "dopamine": round(self.dopamine_level, 2),
             "dopamine_surge": self.dopamine_surge_active,
             "target_id": self.current_target_id,

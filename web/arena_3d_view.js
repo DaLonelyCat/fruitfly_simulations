@@ -183,8 +183,21 @@ class Arena3DView {
       'skybox/negz.jpg'
     ];
 
+    let texturesLoaded = 0;
     const mats = faceFiles.map(file => {
-      const tex = loader.load(file);
+      const tex = loader.load(
+        file,
+        () => {
+          texturesLoaded++;
+          if (texturesLoaded >= 1 && this.skyboxMesh) {
+            this.skyboxMesh.visible = true;
+          }
+        },
+        undefined,
+        (err) => {
+          console.warn('Skybox texture notice:', file, err);
+        }
+      );
       return new THREE.MeshBasicMaterial({
         map: tex,
         side: THREE.BackSide,
@@ -197,6 +210,7 @@ class Arena3DView {
     skybox.position.set(100, 100, 50);
     // Rotate so local +Y (posy.jpg, sky) aligns with world +Z (ceiling/up)
     skybox.rotation.x = Math.PI / 2;
+    skybox.visible = false; // Hidden until at least one texture loads to prevent black-box occlusion
     this.scene.add(skybox);
     this.skyboxMesh = skybox;
   }
@@ -952,6 +966,26 @@ class Arena3DView {
     }
   }
 
+  disposeHierarchy(obj) {
+    if (!obj) return;
+    obj.traverse((child) => {
+      if (child.geometry) {
+        child.geometry.dispose();
+      }
+      if (child.material) {
+        if (Array.isArray(child.material)) {
+          child.material.forEach((mat) => {
+            if (mat.map) mat.map.dispose();
+            mat.dispose();
+          });
+        } else {
+          if (child.material.map) child.material.map.dispose();
+          child.material.dispose();
+        }
+      }
+    });
+  }
+
   syncFoodObjects(patches) {
     const activeIds = new Set();
     patches.forEach(fp => {
@@ -980,6 +1014,7 @@ class Arena3DView {
         const removedMesh = this.foodMeshes[id];
         this.emitFoodCrumble(removedMesh.position.x, removedMesh.position.y, removedMesh.position.z);
         this.scene.remove(removedMesh);
+        this.disposeHierarchy(removedMesh);
         delete this.foodMeshes[id];
       }
     }
@@ -1199,7 +1234,9 @@ class Arena3DView {
 
     for (const id in this.flyMeshes) {
       if (!activeIds.has(parseInt(id, 10))) {
-        this.scene.remove(this.flyMeshes[id].root);
+        const removedFly = this.flyMeshes[id];
+        this.scene.remove(removedFly.root);
+        this.disposeHierarchy(removedFly.root);
         delete this.flyMeshes[id];
       }
     }
@@ -1612,20 +1649,29 @@ class Arena3DView {
             const side = (idx % 2 === 0) ? 1 : -1;
             legGroup.rotation.set(0.2, side * 0.35, 0);
           });
-        } else if (fly.is_walking || Math.hypot(fly.vx || 0, fly.vy || 0) > 1.0) {
-          // Legs walking tripod gait
-          const walkPhase = t * 18.0;
-          flyObj.legs.forEach((legGroup, idx) => {
-            const side = (idx % 2 === 0) ? 1 : -1;
-            const tripodPhase = (idx % 2 === 0) ? walkPhase : walkPhase + Math.PI;
-            legGroup.rotation.y = Math.sin(tripodPhase) * 0.28 * side;
-            legGroup.rotation.x = 0;
-            legGroup.rotation.z = 0;
-          });
+          if (flyObj.nametagSprite) {
+            // Compensate for -1.18 rad Y-rotation to keep nametag elevated directly overhead
+            flyObj.nametagSprite.position.set(-3.0, 0, 1.4);
+          }
         } else {
-          flyObj.legs.forEach((legGroup) => {
-            legGroup.rotation.set(0, 0, 0);
-          });
+          if (flyObj.nametagSprite) {
+            flyObj.nametagSprite.position.set(0, 0, 3.4);
+          }
+          if (fly.is_walking || Math.hypot(fly.vx || 0, fly.vy || 0) > 1.0) {
+            // Legs walking tripod gait
+            const walkPhase = t * 18.0;
+            flyObj.legs.forEach((legGroup, idx) => {
+              const side = (idx % 2 === 0) ? 1 : -1;
+              const tripodPhase = (idx % 2 === 0) ? walkPhase : walkPhase + Math.PI;
+              legGroup.rotation.y = Math.sin(tripodPhase) * 0.28 * side;
+              legGroup.rotation.x = 0;
+              legGroup.rotation.z = 0;
+            });
+          } else {
+            flyObj.legs.forEach((legGroup) => {
+              legGroup.rotation.set(0, 0, 0);
+            });
+          }
         }
       }
     }
@@ -1702,139 +1748,147 @@ class Arena3DView {
       this.tvCoverImage = img;
       if (title) this.tvTrackTitle = title;
     };
+    img.onerror = (err) => {
+      console.warn('TV cover art load notice:', err);
+      this.tvCoverImage = null;
+    };
     img.src = imageUrl;
   }
 
   renderTvScreen(t) {
-    const ctx = this.tvCtx;
-    const w = 256;
-    const h = 192;
+    try {
+      const ctx = this.tvCtx;
+      const w = 256;
+      const h = 192;
 
-    // Dark vintage CRT background
-    ctx.fillStyle = '#061118';
-    ctx.fillRect(0, 0, w, h);
+      // Dark vintage CRT background
+      ctx.fillStyle = '#061118';
+      ctx.fillRect(0, 0, w, h);
 
-    if (this.tvCoverImage) {
-      // 1. Draw Album Cover Art on Left Side (105x105)
-      const ax = 14, ay = 18, asize = 105, ar = 8;
-      ctx.save();
-      ctx.beginPath();
-      ctx.moveTo(ax + ar, ay);
-      ctx.lineTo(ax + asize - ar, ay);
-      ctx.quadraticCurveTo(ax + asize, ay, ax + asize, ay + ar);
-      ctx.lineTo(ax + asize, ay + asize - ar);
-      ctx.quadraticCurveTo(ax + asize, ay + asize, ax + asize - ar, ay + asize);
-      ctx.lineTo(ax + ar, ay + asize);
-      ctx.quadraticCurveTo(ax, ay + asize, ax, ay + asize - ar);
-      ctx.lineTo(ax, ay + ar);
-      ctx.quadraticCurveTo(ax, ay, ax + ar, ay);
-      ctx.closePath();
-      ctx.clip();
-      ctx.drawImage(this.tvCoverImage, ax, ay, asize, asize);
-      ctx.restore();
+      if (this.tvCoverImage) {
+        // 1. Draw Album Cover Art on Left Side (105x105)
+        const ax = 14, ay = 18, asize = 105, ar = 8;
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(ax + ar, ay);
+        ctx.lineTo(ax + asize - ar, ay);
+        ctx.quadraticCurveTo(ax + asize, ay, ax + asize, ay + ar);
+        ctx.lineTo(ax + asize, ay + asize - ar);
+        ctx.quadraticCurveTo(ax + asize, ay + asize, ax + asize - ar, ay + asize);
+        ctx.lineTo(ax + ar, ay + asize);
+        ctx.quadraticCurveTo(ax, ay + asize, ax, ay + asize - ar);
+        ctx.lineTo(ax, ay + ar);
+        ctx.quadraticCurveTo(ax, ay, ax + ar, ay);
+        ctx.closePath();
+        ctx.clip();
+        ctx.drawImage(this.tvCoverImage, ax, ay, asize, asize);
+        ctx.restore();
 
-      // Border around album art
-      ctx.lineWidth = 1.5;
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
-      ctx.strokeRect(ax, ay, asize, asize);
+        // Border around album art
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+        ctx.strokeRect(ax, ay, asize, asize);
 
-      // 2. Right Side Track Info & Metadata
-      ctx.fillStyle = '#10b981';
-      ctx.font = 'bold 11px monospace';
-      ctx.textAlign = 'left';
-      ctx.fillText('SPOTIFY LIVE', 132, 34);
+        // 2. Right Side Track Info & Metadata
+        ctx.fillStyle = '#10b981';
+        ctx.font = 'bold 11px monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText('SPOTIFY LIVE', 132, 34);
 
-      // Truncate track title to fit in available width
-      ctx.fillStyle = '#f8fafc';
-      ctx.font = 'bold 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-      const maxTitleW = 112;
-      let displayTitle = this.tvTrackTitle || 'Now Playing';
-      if (ctx.measureText(displayTitle).width > maxTitleW) {
-        while (displayTitle.length > 3 && ctx.measureText(displayTitle + '...').width > maxTitleW) {
-          displayTitle = displayTitle.slice(0, -1);
+        // Truncate track title to fit in available width
+        ctx.fillStyle = '#f8fafc';
+        ctx.font = 'bold 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        const maxTitleW = 112;
+        let displayTitle = this.tvTrackTitle || 'Now Playing';
+        if (ctx.measureText(displayTitle).width > maxTitleW) {
+          while (displayTitle.length > 3 && ctx.measureText(displayTitle + '...').width > maxTitleW) {
+            displayTitle = displayTitle.slice(0, -1);
+          }
+          displayTitle += '...';
         }
-        displayTitle += '...';
-      }
-      ctx.fillText(displayTitle, 132, 54);
+        ctx.fillText(displayTitle, 132, 54);
 
-      // Sound Wave icon / mini equalizer beside cover
-      const miniBars = 6;
-      for (let i = 0; i < miniBars; i++) {
-        const mbH = Math.max(6, Math.sin(t * (3.5 + i * 1.5)) * 14 + 18);
+        // Sound Wave icon / mini equalizer beside cover
+        const miniBars = 6;
+        for (let i = 0; i < miniBars; i++) {
+          const mbH = Math.max(6, Math.sin(t * (3.5 + i * 1.5)) * 14 + 18);
+          ctx.fillStyle = '#38bdf8';
+          ctx.fillRect(132 + i * 12, 115 - mbH, 7, mbH);
+        }
+
+        // 3. Audio Equalizer Frequency Bars across bottom (y = 138 to 175)
+        const numBars = 14;
+        const barW = 12;
+        const gap = 5;
+        const startX = (w - (numBars * barW + (numBars - 1) * gap)) / 2;
+        const maxBarH = 36;
+
+        for (let i = 0; i < numBars; i++) {
+          const freq = 2.6 + i * 1.2;
+          const pulse = Math.sin(t * freq + i * 0.85);
+          const pulse2 = Math.cos(t * (freq * 0.6) - i * 0.4);
+          const barH = Math.max(6, (pulse * 0.4 + pulse2 * 0.4 + 0.5) * maxBarH);
+          const bx = startX + i * (barW + gap);
+          const by = 176 - barH;
+
+          const grad = ctx.createLinearGradient(0, by, 0, 176);
+          grad.addColorStop(0, '#10b981');
+          grad.addColorStop(0.5, '#06b6d4');
+          grad.addColorStop(1, '#6366f1');
+          ctx.fillStyle = grad;
+          ctx.fillRect(bx, by, barW, barH);
+
+          // Peak floating cap
+          ctx.fillStyle = '#fef08a';
+          ctx.fillRect(bx, by - 2.5, barW, 2);
+        }
+        ctx.fillStyle = 'rgba(56, 189, 248, 0.4)';
+        ctx.fillRect(startX - 2, 177, (numBars * (barW + gap)) - gap + 4, 1.5);
+      } else {
+        // Fallback Full Spectrum Display
         ctx.fillStyle = '#38bdf8';
-        ctx.fillRect(132 + i * 12, 115 - mbH, 7, mbH);
+        ctx.font = 'bold 15px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(this.tvTrackTitle || 'SPOTIFY CHILL BEATS', w / 2, 26);
+
+        const numBars = 10;
+        const barW = 16;
+        const gap = 6;
+        const startX = (w - (numBars * barW + (numBars - 1) * gap)) / 2;
+        const maxBarH = 105;
+
+        for (let i = 0; i < numBars; i++) {
+          const freq = 2.8 + i * 1.3;
+          const pulse = Math.sin(t * freq + i * 0.9);
+          const pulse2 = Math.cos(t * (freq * 0.7) - i * 0.5);
+          const barH = Math.max(14, (pulse * 0.35 + pulse2 * 0.35 + 0.5) * maxBarH);
+          const bx = startX + i * (barW + gap);
+          const by = 158 - barH;
+
+          const grad = ctx.createLinearGradient(0, by, 0, 158);
+          grad.addColorStop(0, '#10b981'); // Neon emerald
+          grad.addColorStop(0.4, '#06b6d4'); // Cyan
+          grad.addColorStop(1, '#6366f1'); // Indigo
+          ctx.fillStyle = grad;
+          ctx.fillRect(bx, by, barW, barH);
+
+          ctx.fillStyle = '#fef08a';
+          ctx.fillRect(bx, by - 3.5, barW, 2.5);
+        }
+        ctx.fillStyle = 'rgba(56, 189, 248, 0.4)';
+        ctx.fillRect(startX - 4, 159, (numBars * (barW + gap)) - gap + 8, 2);
       }
 
-      // 3. Audio Equalizer Frequency Bars across bottom (y = 138 to 175)
-      const numBars = 14;
-      const barW = 12;
-      const gap = 5;
-      const startX = (w - (numBars * barW + (numBars - 1) * gap)) / 2;
-      const maxBarH = 36;
-
-      for (let i = 0; i < numBars; i++) {
-        const freq = 2.6 + i * 1.2;
-        const pulse = Math.sin(t * freq + i * 0.85);
-        const pulse2 = Math.cos(t * (freq * 0.6) - i * 0.4);
-        const barH = Math.max(6, (pulse * 0.4 + pulse2 * 0.4 + 0.5) * maxBarH);
-        const bx = startX + i * (barW + gap);
-        const by = 176 - barH;
-
-        const grad = ctx.createLinearGradient(0, by, 0, 176);
-        grad.addColorStop(0, '#10b981');
-        grad.addColorStop(0.5, '#06b6d4');
-        grad.addColorStop(1, '#6366f1');
-        ctx.fillStyle = grad;
-        ctx.fillRect(bx, by, barW, barH);
-
-        // Peak floating cap
-        ctx.fillStyle = '#fef08a';
-        ctx.fillRect(bx, by - 2.5, barW, 2);
+      // Retro scanlines
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.26)';
+      for (let y = 0; y < h; y += 4) {
+        ctx.fillRect(0, y, w, 2);
       }
-      ctx.fillStyle = 'rgba(56, 189, 248, 0.4)';
-      ctx.fillRect(startX - 2, 177, (numBars * (barW + gap)) - gap + 4, 1.5);
-    } else {
-      // Fallback Full Spectrum Display
-      ctx.fillStyle = '#38bdf8';
-      ctx.font = 'bold 15px monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText(this.tvTrackTitle || 'SPOTIFY CHILL BEATS', w / 2, 26);
 
-      const numBars = 10;
-      const barW = 16;
-      const gap = 6;
-      const startX = (w - (numBars * barW + (numBars - 1) * gap)) / 2;
-      const maxBarH = 105;
-
-      for (let i = 0; i < numBars; i++) {
-        const freq = 2.8 + i * 1.3;
-        const pulse = Math.sin(t * freq + i * 0.9);
-        const pulse2 = Math.cos(t * (freq * 0.7) - i * 0.5);
-        const barH = Math.max(14, (pulse * 0.35 + pulse2 * 0.35 + 0.5) * maxBarH);
-        const bx = startX + i * (barW + gap);
-        const by = 158 - barH;
-
-        const grad = ctx.createLinearGradient(0, by, 0, 158);
-        grad.addColorStop(0, '#10b981'); // Neon emerald
-        grad.addColorStop(0.4, '#06b6d4'); // Cyan
-        grad.addColorStop(1, '#6366f1'); // Indigo
-        ctx.fillStyle = grad;
-        ctx.fillRect(bx, by, barW, barH);
-
-        ctx.fillStyle = '#fef08a';
-        ctx.fillRect(bx, by - 3.5, barW, 2.5);
-      }
-      ctx.fillStyle = 'rgba(56, 189, 248, 0.4)';
-      ctx.fillRect(startX - 4, 159, (numBars * (barW + gap)) - gap + 8, 2);
+      this.tvTexture.needsUpdate = true;
+    } catch (err) {
+      console.warn('renderTvScreen notice:', err);
     }
-
-    // Retro scanlines
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.26)';
-    for (let y = 0; y < h; y += 4) {
-      ctx.fillRect(0, y, w, 2);
-    }
-
-    this.tvTexture.needsUpdate = true;
   }
 
   initResizeListener() {

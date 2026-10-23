@@ -160,6 +160,26 @@
     };
   }
 
+  // Spotify Album Cover Art Loader via Public oEmbed API (Accessible across entire app lifecycle)
+  async function loadSpotifyOembedCover(spotifyUrl, fallbackTitle) {
+    try {
+      const oembedUrl = `https://open.spotify.com/oembed?url=${encodeURIComponent(spotifyUrl)}`;
+      const res = await fetch(oembedUrl);
+      if (res.ok) {
+        const data = await res.json();
+        const trackTitle = data.title || fallbackTitle || 'Spotify Music';
+        if (spotifyCurrentTrack) {
+          spotifyCurrentTrack.textContent = trackTitle;
+        }
+        if (data.thumbnail_url && arena3D) {
+          arena3D.setTvCoverArt(data.thumbnail_url, trackTitle);
+        }
+      }
+    } catch (err) {
+      console.warn('Spotify oEmbed fetch notice:', err);
+    }
+  }
+
   // Initialize
   async function init() {
     const backendConfig = getBackendConfig();
@@ -510,26 +530,6 @@
         spotifyMusicBar.classList.add('hidden');
         if (btnToggleMusic) btnToggleMusic.classList.remove('active');
       });
-    }
-
-    // Spotify Album Cover Art Loader via Public oEmbed API
-    async function loadSpotifyOembedCover(spotifyUrl, fallbackTitle) {
-      try {
-        const oembedUrl = `https://open.spotify.com/oembed?url=${encodeURIComponent(spotifyUrl)}`;
-        const res = await fetch(oembedUrl);
-        if (res.ok) {
-          const data = await res.json();
-          const trackTitle = data.title || fallbackTitle || 'Spotify Music';
-          if (spotifyCurrentTrack) {
-            spotifyCurrentTrack.textContent = trackTitle;
-          }
-          if (data.thumbnail_url && arena3D) {
-            arena3D.setTvCoverArt(data.thumbnail_url, trackTitle);
-          }
-        }
-      } catch (err) {
-        console.warn('Spotify oEmbed fetch notice:', err);
-      }
     }
 
     // Spotify Preset Station Buttons
@@ -981,12 +981,17 @@
     });
   }
 
-  // Render Loop
+  // Render Loop (Wrapped in fail-safe try...catch...finally to guarantee 60Hz continuity)
   function renderLoop() {
-    if (arena3D) arena3D.render();
-    if (brain3D) brain3D.render();
-    if (brain2DVisualizer) brain2DVisualizer.render();
-    requestAnimationFrame(renderLoop);
+    try {
+      if (arena3D) arena3D.render();
+      if (brain3D) brain3D.render();
+      if (brain2DVisualizer) brain2DVisualizer.render();
+    } catch (err) {
+      console.error('Render loop animation error:', err);
+    } finally {
+      requestAnimationFrame(renderLoop);
+    }
   }
 
   window.addEventListener('DOMContentLoaded', init);

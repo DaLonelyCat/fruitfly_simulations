@@ -23,6 +23,14 @@
   const toolRemoveFood = document.getElementById('tool-remove-food');
   const btnClearFood = document.getElementById('btn-clear-food');
   const btnToggleHitbox = document.getElementById('btn-toggle-hitbox');
+  const btnToggleNametags = document.getElementById('btn-toggle-nametags');
+  const btnToggleMusic = document.getElementById('btn-toggle-music');
+  const spotifyMusicBar = document.getElementById('spotify-music-bar');
+  const spotifyIframe = document.getElementById('spotify-iframe');
+  const spotifyCurrentTrack = document.getElementById('spotify-current-track');
+  const spotifyUrlInput = document.getElementById('spotify-url-input');
+  const btnLoadSpotifyUrl = document.getElementById('btn-load-spotify-url');
+  const btnCloseSpotifyBar = document.getElementById('btn-close-spotify-bar');
   const btnFlyTakeoff = document.getElementById('btn-fly-takeoff');
   const btnResetCamArena = document.getElementById('btn-reset-cam-arena');
   const btnFullscreen = document.getElementById('btn-fullscreen');
@@ -471,6 +479,80 @@
           btnToggleHitbox.classList.toggle('active', nextState);
           btnToggleHitbox.setAttribute('aria-pressed', nextState ? 'true' : 'false');
           btnToggleHitbox.textContent = nextState ? 'Hitboxes: ON' : 'Hitboxes: OFF';
+        }
+      });
+    }
+
+    if (btnToggleNametags) {
+      btnToggleNametags.addEventListener('click', () => {
+        if (arena3D) {
+          const nextState = !arena3D.showNametags;
+          arena3D.toggleNametags(nextState);
+          btnToggleNametags.classList.toggle('active', nextState);
+          btnToggleNametags.setAttribute('aria-pressed', nextState ? 'true' : 'false');
+          btnToggleNametags.textContent = nextState ? 'Nametags: ON' : 'Nametags: OFF';
+        }
+      });
+    }
+
+    if (btnToggleMusic && spotifyMusicBar) {
+      btnToggleMusic.addEventListener('click', () => {
+        const isHidden = spotifyMusicBar.classList.toggle('hidden');
+        btnToggleMusic.classList.toggle('active', !isHidden);
+      });
+    }
+
+    if (btnCloseSpotifyBar && spotifyMusicBar) {
+      btnCloseSpotifyBar.addEventListener('click', () => {
+        spotifyMusicBar.classList.add('hidden');
+        if (btnToggleMusic) btnToggleMusic.classList.remove('active');
+      });
+    }
+
+    // Spotify Preset Station Buttons
+    document.querySelectorAll('.spotify-preset-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.spotify-preset-btn').forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        const playlistId = btn.dataset.spotifyId;
+        const title = btn.dataset.title;
+        if (spotifyIframe && playlistId) {
+          spotifyIframe.src = `https://open.spotify.com/embed/playlist/${playlistId}?utm_source=generator&theme=0`;
+        }
+        if (spotifyCurrentTrack && title) {
+          spotifyCurrentTrack.textContent = title;
+        }
+      });
+    });
+
+    // Custom Spotify Track / Playlist URL Loader
+    function loadCustomSpotifyUrl() {
+      if (!spotifyUrlInput || !spotifyIframe) return;
+      const url = spotifyUrlInput.value.trim();
+      if (!url) return;
+
+      const match = url.match(/(track|playlist|album|artist|episode)[\/:]([a-zA-Z0-9]+)/);
+      if (match) {
+        const type = match[1];
+        const id = match[2];
+        spotifyIframe.src = `https://open.spotify.com/embed/${type}/${id}?utm_source=generator&theme=0`;
+        if (spotifyCurrentTrack) {
+          spotifyCurrentTrack.textContent = `Custom ${type.toUpperCase()}: ${id}`;
+        }
+        document.querySelectorAll('.spotify-preset-btn').forEach((b) => b.classList.remove('active'));
+      } else {
+        alert('Please enter a valid Spotify track, playlist, or album link (e.g. https://open.spotify.com/track/...)');
+      }
+    }
+
+    if (btnLoadSpotifyUrl) {
+      btnLoadSpotifyUrl.addEventListener('click', loadCustomSpotifyUrl);
+    }
+    if (spotifyUrlInput) {
+      spotifyUrlInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          loadCustomSpotifyUrl();
         }
       });
     }

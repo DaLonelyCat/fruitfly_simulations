@@ -50,6 +50,7 @@ class Arena3DView {
     this.foodCrumbleParticles = [];
     this.envData = null;
     this.showHitboxes = true;
+    this.showNametags = true;
 
     // Smooth Follow Camera State
     this.smoothCamPos = new THREE.Vector3(100, -140, 160);
@@ -462,71 +463,85 @@ class Arena3DView {
     floorHb.position.set(100, 100, 1.6);
     this.objectHitboxesGroup.add(floorHb);
 
-    // 7. Kinetic Fly Playground: Functional Running Wheel (x=45, y=140, z=12)
+    // 7. Kinetic Fly Playground: Sturdy Functional Running Wheel (x=45, y=140, z=12)
     const wheelGroup = new THREE.Group();
     wheelGroup.position.set(45, 140, 12);
 
-    // Stanchions (A-frame support struts)
-    const stanMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.6, roughness: 0.35 });
-    const stanGeom = new THREE.CylinderGeometry(0.5, 0.8, 14, 8);
-    
-    // Left Support Legs
-    const stanL1 = new THREE.Mesh(stanGeom, stanMat);
-    stanL1.position.set(-4.5, -3.8, -5.5);
-    stanL1.rotation.z = 0.25;
-    stanL1.rotation.y = 0.25;
-    wheelGroup.add(stanL1);
+    // Sturdy Stand Base Plate
+    const stanMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.6, roughness: 0.35 });
+    const baseGeom = new THREE.BoxGeometry(16, 22, 0.6);
+    const baseMesh = new THREE.Mesh(baseGeom, stanMat);
+    baseMesh.position.set(0, 0, -11.7);
+    baseMesh.receiveShadow = true;
+    wheelGroup.add(baseMesh);
 
-    const stanL2 = new THREE.Mesh(stanGeom, stanMat);
-    stanL2.position.set(-4.5, 3.8, -5.5);
-    stanL2.rotation.z = 0.25;
-    stanL2.rotation.y = -0.25;
-    wheelGroup.add(stanL2);
+    // Architectural A-Frame Struts (Clean non-skewed geometry meeting at central axle)
+    const strutGeom = new THREE.CylinderGeometry(0.5, 0.5, 14.2, 8);
+    // Left A-Frame (x = -4.2)
+    const strutL1 = new THREE.Mesh(strutGeom, stanMat);
+    strutL1.position.set(-4.2, -4.0, -5.85);
+    strutL1.rotation.set(0.599, 0, 0);
+    wheelGroup.add(strutL1);
 
-    // Right Support Legs
-    const stanR1 = new THREE.Mesh(stanGeom, stanMat);
-    stanR1.position.set(4.5, -3.8, -5.5);
-    stanR1.rotation.z = -0.25;
-    stanR1.rotation.y = 0.25;
-    wheelGroup.add(stanR1);
+    const strutL2 = new THREE.Mesh(strutGeom, stanMat);
+    strutL2.position.set(-4.2, 4.0, -5.85);
+    strutL2.rotation.set(-0.599, 0, 0);
+    wheelGroup.add(strutL2);
 
-    const stanR2 = new THREE.Mesh(stanGeom, stanMat);
-    stanR2.position.set(4.5, 3.8, -5.5);
-    stanR2.rotation.z = -0.25;
-    stanR2.rotation.y = -0.25;
-    wheelGroup.add(stanR2);
+    // Right A-Frame (x = 4.2)
+    const strutR1 = new THREE.Mesh(strutGeom, stanMat);
+    strutR1.position.set(4.2, -4.0, -5.85);
+    strutR1.rotation.set(0.599, 0, 0);
+    wheelGroup.add(strutR1);
 
-    // Central Axle
-    const axleGeom = new THREE.CylinderGeometry(0.45, 0.45, 10, 8);
-    const axle = new THREE.Mesh(axleGeom, stanMat);
+    const strutR2 = new THREE.Mesh(strutGeom, stanMat);
+    strutR2.position.set(4.2, 4.0, -5.85);
+    strutR2.rotation.set(-0.599, 0, 0);
+    wheelGroup.add(strutR2);
+
+    // Brass Central Axle & End Caps
+    const brassMat = new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.8, roughness: 0.25 });
+    const axleGeom = new THREE.CylinderGeometry(0.42, 0.42, 10.2, 12);
+    const axle = new THREE.Mesh(axleGeom, brassMat);
     axle.rotation.z = Math.PI / 2;
     wheelGroup.add(axle);
+
+    const capGeom = new THREE.CylinderGeometry(0.7, 0.7, 0.5, 12);
+    const capL = new THREE.Mesh(capGeom, brassMat);
+    capL.position.set(-5.1, 0, 0);
+    capL.rotation.z = Math.PI / 2;
+    wheelGroup.add(capL);
+
+    const capR = new THREE.Mesh(capGeom, brassMat);
+    capR.position.set(5.1, 0, 0);
+    capR.rotation.z = Math.PI / 2;
+    wheelGroup.add(capR);
 
     // Rotating Wheel Cage
     const wheelCage = new THREE.Group();
     const rimMat = new THREE.MeshStandardMaterial({
-      color: 0x38bdf8,
-      metalness: 0.3,
-      roughness: 0.25,
+      color: 0x06b6d4,
+      metalness: 0.2,
+      roughness: 0.15,
       transparent: true,
-      opacity: 0.82,
+      opacity: 0.85,
       side: THREE.DoubleSide
     });
     
     const rimGeom = new THREE.TorusGeometry(12.0, 0.4, 8, 32);
     const rimLeft = new THREE.Mesh(rimGeom, rimMat);
-    rimLeft.position.set(-3.5, 0, 0);
+    rimLeft.position.set(-3.6, 0, 0);
     rimLeft.rotation.y = Math.PI / 2;
     wheelCage.add(rimLeft);
 
     const rimRight = new THREE.Mesh(rimGeom, rimMat);
-    rimRight.position.set(3.5, 0, 0);
+    rimRight.position.set(3.6, 0, 0);
     rimRight.rotation.y = Math.PI / 2;
     wheelCage.add(rimRight);
 
     // Slats (tread track)
-    const slatGeom = new THREE.BoxGeometry(7.0, 0.35, 0.5);
-    const slatMat = new THREE.MeshStandardMaterial({ color: 0xca8a04, roughness: 0.6 });
+    const slatGeom = new THREE.BoxGeometry(7.2, 0.35, 0.5);
+    const slatMat = new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.6 });
     for (let i = 0; i < 24; i++) {
       const ang = (i / 24) * Math.PI * 2;
       const slat = new THREE.Mesh(slatGeom, slatMat);
@@ -536,14 +551,14 @@ class Arena3DView {
     }
 
     // Radial Spokes
-    const spokeGeom = new THREE.CylinderGeometry(0.2, 0.2, 24.0, 6);
+    const spokeGeom = new THREE.CylinderGeometry(0.18, 0.18, 24.0, 6);
     for (let i = 0; i < 4; i++) {
       const spoke = new THREE.Mesh(spokeGeom, rimMat);
       spoke.rotation.x = (i / 4) * Math.PI;
-      spoke.position.set(-3.5, 0, 0);
+      spoke.position.set(-3.6, 0, 0);
       wheelCage.add(spoke);
       const spokeR = spoke.clone();
-      spokeR.position.set(3.5, 0, 0);
+      spokeR.position.set(3.6, 0, 0);
       wheelCage.add(spokeR);
     }
 
@@ -558,80 +573,220 @@ class Arena3DView {
     wheelHb.rotation.z = Math.PI / 2;
     this.objectHitboxesGroup.add(wheelHb);
 
-    // 8. Kinetic Fly Playground: Swaying Hanging Moss Swing (Anchor on branch at 110, 95, 52)
+    // 8. Kinetic Fly Playground: Swaying Hanging Swing with Basket Chair (Anchor flush at 110, 95, 46.5)
     const swingAnchor = new THREE.Group();
-    swingAnchor.position.set(110, 95, 52);
+    swingAnchor.position.set(110, 95, 46.5);
 
     const ropeMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.9 });
-    const ropeGeom = new THREE.CylinderGeometry(0.18, 0.18, 26, 6);
+    const ropeGeom = new THREE.CylinderGeometry(0.18, 0.18, 22, 6);
 
-    // Overhead Branch Knot Collar
-    const tieGeom = new THREE.TorusGeometry(2.2, 0.35, 6, 16);
+    // Overhead Branch Knot Collar (wraps snugly around horizontal twig)
+    const tieGeom = new THREE.TorusGeometry(2.3, 0.38, 8, 20);
     const tieMesh = new THREE.Mesh(tieGeom, ropeMat);
     tieMesh.rotation.y = Math.PI / 2;
     swingAnchor.add(tieMesh);
     
-    // 3 Vertical Suspension Cords hanging along Z axis from Z=0 to Z=-26
-    const ropeOffsets = [
-      [-2.8, 0],
-      [1.4, 2.4],
-      [1.4, -2.4]
-    ];
-    ropeOffsets.forEach(([rx, ry]) => {
-      const rope = new THREE.Mesh(ropeGeom, ropeMat);
-      rope.position.set(rx, ry, -13);
-      rope.rotation.x = Math.PI / 2;
-      swingAnchor.add(rope);
-    });
+    // Twin Suspension Ropes hanging along Z axis from Z=0 to Z=-22
+    const ropeL = new THREE.Mesh(ropeGeom, ropeMat);
+    ropeL.position.set(-2.5, 0, -11);
+    ropeL.rotation.x = Math.PI / 2;
+    swingAnchor.add(ropeL);
 
-    // Moss Disc Seat at Z = -26
-    const discGeom = new THREE.CylinderGeometry(4.8, 5.2, 1.4, 18);
-    const discMat = new THREE.MeshStandardMaterial({
-      color: 0x2e7d32,
-      roughness: 0.9,
-      metalness: 0.05
-    });
-    const disc = new THREE.Mesh(discGeom, discMat);
-    disc.position.set(0, 0, -26);
-    disc.rotation.x = Math.PI / 2;
-    disc.castShadow = true;
-    swingAnchor.add(disc);
+    const ropeR = new THREE.Mesh(ropeGeom, ropeMat);
+    ropeR.position.set(2.5, 0, -11);
+    ropeR.rotation.x = Math.PI / 2;
+    swingAnchor.add(ropeR);
 
-    // Woven Twig Rim
-    const rimTorus = new THREE.TorusGeometry(5.0, 0.38, 6, 24);
-    const rimTwig = new THREE.Mesh(rimTorus, ropeMat);
-    rimTwig.position.set(0, 0, -26);
-    swingAnchor.add(rimTwig);
+    // 3D Woven Hanging Basket Chair at Z = -22
+    const wickerMat = new THREE.MeshStandardMaterial({ color: 0x854d0e, roughness: 0.85 });
+    
+    // Hanging Suspension Hoop
+    const hoopGeom = new THREE.TorusGeometry(3.8, 0.26, 8, 24);
+    const hoop = new THREE.Mesh(hoopGeom, wickerMat);
+    hoop.position.set(0, 0, -18.5);
+    hoop.rotation.y = Math.PI / 2;
+    swingAnchor.add(hoop);
 
-    // Plush 3D Moss Cushions on top of the seat
-    const mossTuftMat = new THREE.MeshStandardMaterial({
-      color: 0x4d7c0f,
-      roughness: 0.95
-    });
-    const mossTufts = [
-      [0, 0, 0.7],
-      [-1.8, 1.2, 0.6],
-      [1.6, 1.4, 0.5],
-      [1.5, -1.5, 0.6],
-      [-1.6, -1.3, 0.5]
-    ];
-    mossTufts.forEach(([mx, my, mz]) => {
-      const tuftGeom = new THREE.SphereGeometry(1.3, 8, 8);
-      const tuft = new THREE.Mesh(tuftGeom, mossTuftMat);
-      tuft.position.set(mx, my, -26.0 + mz);
-      tuft.scale.set(1.1, 1.1, 0.55);
-      swingAnchor.add(tuft);
-    });
+    // Wicker Basket Bowl Backrest
+    const backGeom = new THREE.SphereGeometry(4.2, 16, 12, 0, Math.PI, 0, Math.PI * 0.72);
+    const basketBack = new THREE.Mesh(backGeom, wickerMat);
+    basketBack.position.set(0, 0, -22);
+    basketBack.rotation.x = -Math.PI / 2;
+    swingAnchor.add(basketBack);
+
+    // Plush Moss Green Seat Cushion at Z = -22
+    const cushionGeom = new THREE.CylinderGeometry(3.6, 3.8, 1.4, 18);
+    const cushionMat = new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.9 });
+    const cushion = new THREE.Mesh(cushionGeom, cushionMat);
+    cushion.position.set(0, 0, -22);
+    cushion.rotation.x = Math.PI / 2;
+    cushion.castShadow = true;
+    swingAnchor.add(cushion);
 
     // Synchronized Swing Hitbox parented directly to swingAnchor
-    const swingHbGeom = new THREE.CylinderGeometry(5.5, 5.5, 2.5, 12);
+    const swingHbGeom = new THREE.CylinderGeometry(5.2, 5.2, 3.0, 12);
     const swingHb = new THREE.Mesh(swingHbGeom, objHbMat);
-    swingHb.position.set(0, 0, -26);
+    swingHb.position.set(0, 0, -22);
     swingHb.rotation.x = Math.PI / 2;
     swingAnchor.add(swingHb);
 
     vivariumGroup.add(swingAnchor);
     this.hangingSwingAnchorGroup = swingAnchor;
+
+    // 9. Retro Spotify CRT TV Lounge & Armchairs (x=75, y=24, z=0)
+    // TV Stand Console Table
+    const tableGroup = new THREE.Group();
+    tableGroup.position.set(75, 24, 0);
+
+    const tableMat = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.6 });
+    const tableTopGeom = new THREE.BoxGeometry(18, 10, 1.2);
+    const tableTop = new THREE.Mesh(tableTopGeom, tableMat);
+    tableTop.position.set(0, 0, 3.8);
+    tableTop.castShadow = true;
+    tableGroup.add(tableTop);
+
+    // 4 Mid-Century Tapered Table Legs
+    const tableLegGeom = new THREE.CylinderGeometry(0.35, 0.22, 3.8, 8);
+    const legCoords = [[-7.5, -3.8], [7.5, -3.8], [-7.5, 3.8], [7.5, 3.8]];
+    legCoords.forEach(([lx, ly]) => {
+      const leg = new THREE.Mesh(tableLegGeom, tableMat);
+      leg.position.set(lx, ly, 1.9);
+      leg.rotation.x = Math.PI / 2;
+      tableGroup.add(leg);
+    });
+
+    // Retro CRT TV Housing
+    const tvBoxGeom = new THREE.BoxGeometry(14.5, 8.5, 10.5);
+    const tvCaseMat = new THREE.MeshStandardMaterial({ color: 0x271710, roughness: 0.55 });
+    const tvBox = new THREE.Mesh(tvBoxGeom, tvCaseMat);
+    tvBox.position.set(0, 0, 9.6);
+    tvBox.castShadow = true;
+    tableGroup.add(tvBox);
+
+    // CRT Screen Bezel
+    const bezelGeom = new THREE.BoxGeometry(11.2, 1.2, 8.4);
+    const bezelMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.4 });
+    const bezel = new THREE.Mesh(bezelGeom, bezelMat);
+    bezel.position.set(0, 4.0, 9.6);
+    tableGroup.add(bezel);
+
+    // Dynamic Animated Canvas Equalizer Screen (faces +Y towards lounge chairs)
+    const tvCanvas = document.createElement('canvas');
+    tvCanvas.width = 256;
+    tvCanvas.height = 192;
+    this.tvCanvas = tvCanvas;
+    this.tvCtx = tvCanvas.getContext('2d');
+    this.tvTexture = new THREE.CanvasTexture(tvCanvas);
+
+    const screenGeom = new THREE.PlaneGeometry(10.2, 7.6);
+    const screenMat = new THREE.MeshBasicMaterial({ map: this.tvTexture });
+    const screenMesh = new THREE.Mesh(screenGeom, screenMat);
+    screenMesh.position.set(0, 4.65, 9.6);
+    screenMesh.rotation.x = -Math.PI / 2; // Facing +Y
+    screenMesh.rotation.y = Math.PI;
+    tableGroup.add(screenMesh);
+
+    // Knobs and Speaker Grille
+    const knobMat = new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.7, roughness: 0.3 });
+    const knobGeom = new THREE.CylinderGeometry(0.55, 0.55, 0.5, 12);
+    const knob1 = new THREE.Mesh(knobGeom, knobMat);
+    knob1.position.set(5.8, 4.4, 11.5);
+    knob1.rotation.x = Math.PI / 2;
+    tableGroup.add(knob1);
+
+    const knob2 = new THREE.Mesh(knobGeom, knobMat);
+    knob2.position.set(5.8, 4.4, 9.0);
+    knob2.rotation.x = Math.PI / 2;
+    tableGroup.add(knob2);
+
+    // Rabbit-Ear Antennae
+    const antMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.9, roughness: 0.2 });
+    const antGeom = new THREE.CylinderGeometry(0.12, 0.12, 7.5, 6);
+    const ant1 = new THREE.Mesh(antGeom, antMat);
+    ant1.position.set(-2.0, 0, 17.5);
+    ant1.rotation.set(0, 0, 0.35);
+    tableGroup.add(ant1);
+
+    const ant2 = new THREE.Mesh(antGeom, antMat);
+    ant2.position.set(2.0, 0, 17.5);
+    ant2.rotation.set(0, 0, -0.35);
+    tableGroup.add(ant2);
+
+    vivariumGroup.add(tableGroup);
+
+    // TV Hitbox
+    const tvHbGeom = new THREE.BoxGeometry(16, 12, 16);
+    const tvHb = new THREE.Mesh(tvHbGeom, objHbMat);
+    tvHb.position.set(75, 24, 8);
+    this.objectHitboxesGroup.add(tvHb);
+
+    // Lounge Semicircle Rug at (75, 42, 0.08)
+    const rugGeom = new THREE.CylinderGeometry(18, 18, 0.16, 32);
+    const rugMat = new THREE.MeshStandardMaterial({ color: 0x7c2d12, roughness: 0.95 });
+    const rug = new THREE.Mesh(rugGeom, rugMat);
+    rug.position.set(75, 42, 0.08);
+    rug.rotation.x = Math.PI / 2;
+    rug.receiveShadow = true;
+    vivariumGroup.add(rug);
+
+    // 3 Mid-Century Modern Plush Armchairs Facing TV
+    const chairConfigs = [
+      { id: 'chair_left', x: 65, y: 42, yaw: -1.2, color: 0x047857 },   // Emerald Green
+      { id: 'chair_center', x: 75, y: 44, yaw: -1.57, color: 0x1d4ed8 }, // Royal Blue
+      { id: 'chair_right', x: 85, y: 42, yaw: -1.94, color: 0xbe123c }  // Velvet Ruby
+    ];
+
+    chairConfigs.forEach(cfg => {
+      const chairGroup = new THREE.Group();
+      chairGroup.position.set(cfg.x, cfg.y, 0);
+      chairGroup.rotation.z = cfg.yaw;
+
+      const chairFabricMat = new THREE.MeshStandardMaterial({ color: cfg.color, roughness: 0.85 });
+      const woodLegMat = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.6 });
+
+      // 4 Angled Wooden Legs
+      const legGeom = new THREE.CylinderGeometry(0.24, 0.16, 2.2, 6);
+      const legPos = [[-2.4, -2.0], [2.4, -2.0], [-2.4, 2.0], [2.4, 2.0]];
+      legPos.forEach(([lx, ly]) => {
+        const leg = new THREE.Mesh(legGeom, woodLegMat);
+        leg.position.set(lx, ly, 1.1);
+        leg.rotation.x = Math.PI / 2;
+        chairGroup.add(leg);
+      });
+
+      // Thick Plush Seat Cushion at Z = 2.2
+      const seatGeom = new THREE.BoxGeometry(6.4, 5.8, 1.6);
+      const seat = new THREE.Mesh(seatGeom, chairFabricMat);
+      seat.position.set(0, 0, 2.2);
+      seat.castShadow = true;
+      chairGroup.add(seat);
+
+      // Contoured High Backrest
+      const backGeom = new THREE.BoxGeometry(6.4, 1.4, 5.0);
+      const back = new THREE.Mesh(backGeom, chairFabricMat);
+      back.position.set(0, -2.4, 4.8);
+      back.castShadow = true;
+      chairGroup.add(back);
+
+      // Left & Right Padded Armrests
+      const armGeom = new THREE.BoxGeometry(1.1, 5.6, 2.2);
+      const armL = new THREE.Mesh(armGeom, chairFabricMat);
+      armL.position.set(-3.2, 0, 3.4);
+      chairGroup.add(armL);
+
+      const armR = new THREE.Mesh(armGeom, chairFabricMat);
+      armR.position.set(3.2, 0, 3.4);
+      chairGroup.add(armR);
+
+      vivariumGroup.add(chairGroup);
+
+      // Chair Hitbox
+      const chairHbGeom = new THREE.CylinderGeometry(3.6, 3.6, 6.0, 12);
+      const chairHb = new THREE.Mesh(chairHbGeom, objHbMat);
+      chairHb.position.set(cfg.x, cfg.y, 3.0);
+      chairHb.rotation.x = Math.PI / 2;
+      this.objectHitboxesGroup.add(chairHb);
+    });
 
     this.scene.add(vivariumGroup);
   }
@@ -752,6 +907,66 @@ class Arena3DView {
         this.foodMeshes[id].userData.hitboxMesh.visible = show;
       }
     }
+  }
+
+  toggleNametags(show) {
+    this.showNametags = show;
+    for (const id in this.flyMeshes) {
+      if (this.flyMeshes[id].nametagSprite) {
+        this.flyMeshes[id].nametagSprite.visible = show;
+      }
+    }
+  }
+
+  createMinecraftNametag(fly) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+
+    const name = fly.archetype || ('Fly ' + fly.id);
+    const label = `${name} [Fly ${fly.id}]`;
+
+    // Rounded rectangle dark translucent pill plate (Minecraft style)
+    const x = 12, y = 10, w = 232, h = 44, r = 10;
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.78)';
+    ctx.fill();
+    ctx.lineWidth = 2.0;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+    ctx.stroke();
+
+    // Bold clean text with subtle drop shadow
+    ctx.font = 'bold 22px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#ffffff';
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.85)';
+    ctx.shadowBlur = 4;
+    ctx.fillText(label, 128, 32);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.minFilter = THREE.LinearFilter;
+    const spriteMat = new THREE.SpriteMaterial({
+      map: texture,
+      transparent: true,
+      depthTest: false,
+      depthWrite: false
+    });
+    const sprite = new THREE.Sprite(spriteMat);
+    sprite.scale.set(6.8, 1.7, 1.0);
+    return sprite;
   }
 
   updateState(state) {
@@ -1004,6 +1219,11 @@ class Arena3DView {
       // Selection Ring
       flyObj.selectionRing.visible = (fly.id === selectedId);
 
+      // Nametag visibility
+      if (flyObj.nametagSprite) {
+        flyObj.nametagSprite.visible = this.showNametags;
+      }
+
       // Hitbox visibility
       flyObj.hitboxMesh.visible = this.showHitboxes;
       flyObj.hitboxMesh.material.color.setHex(0x00d2ff);
@@ -1050,6 +1270,11 @@ class Arena3DView {
       selectionRing.position.set(0, 0, 0.1);
       root.add(selectionRing);
 
+      const nametagSprite = this.createMinecraftNametag(fly);
+      nametagSprite.position.set(0, 0, 3.4);
+      nametagSprite.visible = this.showNametags;
+      root.add(nametagSprite);
+
       return {
         root,
         bodyMesh: curlyClone,
@@ -1059,7 +1284,8 @@ class Arena3DView {
         haltereL: new THREE.Group(),
         haltereR: new THREE.Group(),
         legs: [],
-        selectionRing
+        selectionRing,
+        nametagSprite
       };
     }
 
@@ -1126,9 +1352,9 @@ class Arena3DView {
     abdomen.castShadow = true;
     root.add(abdomen);
 
-    // Wings
+    // Wings: Oriented backwards towards abdomen (-X)
     const wingGeom = new THREE.PlaneGeometry(3.6, 1.3, 6, 2);
-    wingGeom.translate(1.8, 0, 0);
+    wingGeom.translate(-1.8, 0, 0); // Wing extends along -X over the abdomen
     const wingMat = new THREE.MeshPhysicalMaterial({
       color: 0xe2e8f0,
       transparent: true,
@@ -1140,12 +1366,12 @@ class Arena3DView {
 
     const wingLeft = new THREE.Mesh(wingGeom, wingMat);
     wingLeft.position.set(0.1, 0.55, 0.65);
-    wingLeft.rotation.set(0, 0, 12 * Math.PI / 180);
+    wingLeft.rotation.set(0, 0, -12 * Math.PI / 180);
     root.add(wingLeft);
 
     const wingRight = new THREE.Mesh(wingGeom, wingMat);
     wingRight.position.set(0.1, -0.55, 0.65);
-    wingRight.rotation.set(0, 0, -12 * Math.PI / 180);
+    wingRight.rotation.set(0, 0, 12 * Math.PI / 180);
     root.add(wingRight);
 
     // Halteres
@@ -1214,6 +1440,12 @@ class Arena3DView {
     selectionRing.position.set(0, 0, 0.1);
     root.add(selectionRing);
 
+    // Minecraft-Style Floating Nametag
+    const nametagSprite = this.createMinecraftNametag(fly);
+    nametagSprite.position.set(0, 0, 3.4);
+    nametagSprite.visible = this.showNametags;
+    root.add(nametagSprite);
+
     return {
       root,
       bodyMesh: scutum,
@@ -1223,7 +1455,8 @@ class Arena3DView {
       haltereL,
       haltereR,
       legs,
-      selectionRing
+      selectionRing,
+      nametagSprite
     };
   }
 
@@ -1384,30 +1617,51 @@ class Arena3DView {
 
       if (fly) {
         // Wings & Halteres
+        const degToRad = Math.PI / 180;
+        const isSittingPose = (fly.action === 'listening' || fly.action === 'swinging' || fly.is_sitting);
+
         if (fly.is_airborne || fly.action === 'flying' || fly.action === 'takeoff') {
-          const wingFlap = Math.sin(t * 70.0) * 0.65;
+          // Flapping backwards & laterally across stroke plane
+          const wingFlap = Math.sin(t * 65.0) * 0.55;
           flyObj.wingLeft.rotation.y = wingFlap;
           flyObj.wingRight.rotation.y = -wingFlap;
+          flyObj.wingLeft.rotation.z = -0.22 + Math.sin(t * 65.0) * 0.35;
+          flyObj.wingRight.rotation.z = 0.22 - Math.sin(t * 65.0) * 0.35;
           if (flyObj.haltereL) flyObj.haltereL.rotation.z = -wingFlap * 0.8;
           if (flyObj.haltereR) flyObj.haltereR.rotation.z = wingFlap * 0.8;
         } else if (fly.action === 'courting') {
-          const degToRad = Math.PI / 180;
-          flyObj.wingLeft.rotation.z = (fly.wing_left_angle || 12) * degToRad;
-          flyObj.wingRight.rotation.z = -(fly.wing_right_angle || 12) * degToRad;
+          flyObj.wingLeft.rotation.y = 0;
+          flyObj.wingRight.rotation.y = 0;
+          flyObj.wingLeft.rotation.z = -(fly.wing_left_angle || 12) * degToRad;
+          flyObj.wingRight.rotation.z = (fly.wing_right_angle || 12) * degToRad;
         } else {
-          flyObj.wingLeft.rotation.set(0, 0, 12 * Math.PI / 180);
-          flyObj.wingRight.rotation.set(0, 0, -12 * Math.PI / 180);
+          flyObj.wingLeft.rotation.set(0, 0, -12 * degToRad);
+          flyObj.wingRight.rotation.set(0, 0, 12 * degToRad);
           if (flyObj.haltereL) flyObj.haltereL.rotation.set(0, 0, 0);
           if (flyObj.haltereR) flyObj.haltereR.rotation.set(0, 0, 0);
         }
 
-        // Legs walking tripod gait
-        if (fly.is_walking) {
+        // Upright Sitting Posture on Swing Basket Chair or Lounge Armchair
+        if (isSittingPose) {
+          // 70-deg upright tall sitting pose on cushion
+          flyObj.root.rotation.y = -1.18;
+          flyObj.legs.forEach((legGroup, idx) => {
+            const side = (idx % 2 === 0) ? 1 : -1;
+            legGroup.rotation.set(0.2, side * 0.35, 0);
+          });
+        } else if (fly.is_walking || Math.hypot(fly.vx || 0, fly.vy || 0) > 1.0) {
+          // Legs walking tripod gait
           const walkPhase = t * 18.0;
           flyObj.legs.forEach((legGroup, idx) => {
             const side = (idx % 2 === 0) ? 1 : -1;
             const tripodPhase = (idx % 2 === 0) ? walkPhase : walkPhase + Math.PI;
             legGroup.rotation.y = Math.sin(tripodPhase) * 0.28 * side;
+            legGroup.rotation.x = 0;
+            legGroup.rotation.z = 0;
+          });
+        } else {
+          flyObj.legs.forEach((legGroup) => {
+            legGroup.rotation.set(0, 0, 0);
           });
         }
       }
@@ -1422,13 +1676,16 @@ class Arena3DView {
       }
     }
 
-    // 3. Kinetic Playground: Running Wheel and Hanging Swing Animations
+    // 3. Kinetic Playground & Spotify TV Equalizer Screen Animations
     if (this.runningWheelMesh && this.envData && this.envData.running_wheel) {
       this.runningWheelMesh.rotation.x = this.envData.running_wheel.angle;
     }
     if (this.hangingSwingAnchorGroup && this.envData && this.envData.hanging_swing) {
       this.hangingSwingAnchorGroup.rotation.y = this.envData.hanging_swing.angle_x;
       this.hangingSwingAnchorGroup.rotation.x = this.envData.hanging_swing.angle_y;
+    }
+    if (this.tvCtx && this.tvTexture) {
+      this.renderTvScreen(t);
     }
 
     // 4. Camera Update
@@ -1469,6 +1726,61 @@ class Arena3DView {
     this.foodCrumbleParticles = aliveCrumble;
 
     this.renderer.render(this.scene, this.camera);
+  }
+
+  renderTvScreen(t) {
+    const ctx = this.tvCtx;
+    const w = 256;
+    const h = 192;
+
+    // Dark CRT background with subtle blue-green tint
+    ctx.fillStyle = '#061118';
+    ctx.fillRect(0, 0, w, h);
+
+    // Glowing TV Title
+    ctx.fillStyle = '#38bdf8';
+    ctx.font = 'bold 15px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('SPOTIFY CHILL BEATS', w / 2, 26);
+
+    // Animated Spectrum Equalizer Bars
+    const numBars = 10;
+    const barW = 16;
+    const gap = 6;
+    const startX = (w - (numBars * barW + (numBars - 1) * gap)) / 2;
+    const maxBarH = 105;
+
+    for (let i = 0; i < numBars; i++) {
+      const freq = 2.8 + i * 1.3;
+      const pulse = Math.sin(t * freq + i * 0.9);
+      const pulse2 = Math.cos(t * (freq * 0.7) - i * 0.5);
+      const barH = Math.max(14, (pulse * 0.35 + pulse2 * 0.35 + 0.5) * maxBarH);
+      const bx = startX + i * (barW + gap);
+      const by = 158 - barH;
+
+      const grad = ctx.createLinearGradient(0, by, 0, 158);
+      grad.addColorStop(0, '#10b981'); // Neon emerald
+      grad.addColorStop(0.4, '#06b6d4'); // Cyan
+      grad.addColorStop(1, '#6366f1'); // Indigo
+      ctx.fillStyle = grad;
+      ctx.fillRect(bx, by, barW, barH);
+
+      // Peak floating indicator cap
+      ctx.fillStyle = '#fef08a';
+      ctx.fillRect(bx, by - 3.5, barW, 2.5);
+    }
+
+    // Baseline
+    ctx.fillStyle = 'rgba(56, 189, 248, 0.4)';
+    ctx.fillRect(startX - 4, 159, (numBars * (barW + gap)) - gap + 8, 2);
+
+    // Retro scanlines
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.28)';
+    for (let y = 0; y < h; y += 4) {
+      ctx.fillRect(0, y, w, 2);
+    }
+
+    this.tvTexture.needsUpdate = true;
   }
 
   initResizeListener() {

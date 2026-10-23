@@ -131,6 +131,10 @@ class FruitFlyAgent:
         self.entertainment = 0.5       # 0.0 (Bored) to 1.0 (Entertained)
         self.attack_cooldown = random.uniform(1.0, 3.0)
         self.is_perched_on_swing = False
+        self.is_sitting = False
+        self.sitting_chair_id = None
+        self.sitting_timer = 0
+        self.sitting_cooldown = 0.0
         self.exercise_timer = 0
         self.exercise_cooldown = 0.0
         self.swing_timer = 0
@@ -318,36 +322,98 @@ class FruitFlyAgent:
             # If perched on moss seat
             if getattr(self, 'is_perched_on_swing', False):
                 self.swing_timer = getattr(self, 'swing_timer', 60) - 1
-                if self.swing_timer <= 0:
+                if self.swing_timer <= 0 or self.satiety < 0.30:
                     self.is_perched_on_swing = False
                     self.is_airborne = True
                     self.flight_timer = random.randint(45, 90)
                     self.vz = 22.0
-                    self.brain.last_thought = "Took off from moss swing into 3D flight!"
+                    self.pitch = 0.0
+                    self.brain.last_thought = "Took off from swing into 3D flight!"
                 else:
                     self.x = swing_x
                     self.y = swing_y
-                    self.z = swing_z + 1.6
+                    self.z = swing_z + 2.0
                     self.vx = swing["vel_x"] * 10.0
                     self.vy = swing["vel_y"] * 10.0
                     self.vz = 0.0
                     self.roll = swing["angle_y"] * 0.4
-                    self.pitch = swing["angle_x"] * 0.4
+                    self.pitch = -1.22 + swing["angle_x"] * 0.35  # Upright 70-deg sitting pose on chair
                     self.last_action_tag = "swinging"
                     self.entertainment = min(1.0, self.entertainment + 0.40 * dt_sec * 60 * 0.016 + 0.005)
                     self.mood = min(1.0, self.mood + 0.35 * dt_sec)
                     self.dopamine_level = min(1.0, self.dopamine_level + 0.20 * dt_sec)
-                    self.brain.last_thought = "Perched on the hanging moss swing! Swaying back and forth in the breeze."
+                    self.brain.last_thought = "Sitting upright in the hanging swing chair! Swaying back and forth in the breeze."
                     on_playground = True
                     swing["vel_x"] += random.uniform(-0.06, 0.06) * dt_sec
                     swing["vel_y"] += random.uniform(-0.06, 0.06) * dt_sec
             elif not self.is_airborne and dist_to_seat < 6.5:
                 self.is_perched_on_swing = True
                 self.swing_timer = random.randint(80, 160)
+                self.pitch = -1.22
                 self.last_action_tag = "swinging"
                 self.entertainment = min(1.0, self.entertainment + 0.30)
                 self.mood = min(1.0, self.mood + 0.20)
                 on_playground = True
+
+        # C. Spotify TV Lounge Armchairs (Flies sit to listen to music and can leave anytime)
+        if hasattr(env, 'lounge_chairs') and not self.is_airborne and not getattr(self, 'is_perched_on_swing', False) and getattr(self, 'exercise_timer', 0) <= 0:
+            if getattr(self, 'is_sitting', False):
+                self.sitting_timer = getattr(self, 'sitting_timer', 60) - 1
+                # Voluntary leave: timer expires, hunger arises, or sudden startle
+                if self.sitting_timer <= 0 or self.satiety < 0.30:
+                    self.is_sitting = False
+                    for chair in env.lounge_chairs:
+                        if chair.get("occupied_by") == self.id:
+                            chair["occupied_by"] = None
+                    self.sitting_chair_id = None
+                    self.sitting_cooldown = random.uniform(12.0, 22.0)
+                    self.pitch = 0.0
+                    exit_yaw = self.heading
+                    self.vx = math.cos(exit_yaw) * 16.0
+                    self.vy = math.sin(exit_yaw) * 16.0
+                    self.brain.last_thought = "Finished listening to Spotify TV music! Stepping down from armchair."
+                else:
+                    chair_obj = next((c for c in env.lounge_chairs if c["id"] == self.sitting_chair_id), None)
+                    if chair_obj:
+                        self.x = chair_obj["x"]
+                        self.y = chair_obj["y"]
+                        self.z = chair_obj.get("seat_z", 2.2)
+                        self.heading = chair_obj["target_yaw"]
+                    self.vx = 0.0
+                    self.vy = 0.0
+                    self.vz = 0.0
+                    self.pitch = -1.22  # 70-deg tall upright sitting pose on chair
+                    self.roll = 0.0
+                    self.last_action_tag = "listening"
+                    self.entertainment = min(1.0, self.entertainment + 0.35 * dt_sec * 60 * 0.016 + 0.006)
+                    self.mood = min(1.0, self.mood + 0.32 * dt_sec)
+                    self.dopamine_level = min(1.0, self.dopamine_level + 0.18 * dt_sec)
+                    self.brain.last_thought = "Relaxing comfortably in armchair listening to Spotify TV music! Feeling chill."
+                    on_playground = True
+            elif getattr(self, 'sitting_cooldown', 0.0) <= 0.0 and self.satiety > 0.35:
+                # Check proximity to available lounge chairs
+                for chair in env.lounge_chairs:
+                    if chair.get("occupied_by") is None or chair.get("occupied_by") == self.id:
+                        dist_chair = math.hypot(self.x - chair["x"], self.y - chair["y"])
+                        if dist_chair < 7.0 and abs(self.z - chair["z"]) < 5.0 and random.random() < 0.45:
+                            self.is_sitting = True
+                            self.sitting_chair_id = chair["id"]
+                            chair["occupied_by"] = self.id
+                            self.sitting_timer = random.randint(120, 240)  # ~2.5 - 4.5 seconds of cozy music listening
+                            self.x = chair["x"]
+                            self.y = chair["y"]
+                            self.z = chair.get("seat_z", 2.2)
+                            self.heading = chair["target_yaw"]
+                            self.pitch = -1.22
+                            self.roll = 0.0
+                            self.vx = 0.0
+                            self.vy = 0.0
+                            self.vz = 0.0
+                            self.last_action_tag = "listening"
+                            self.entertainment = min(1.0, self.entertainment + 0.25)
+                            self.mood = min(1.0, self.mood + 0.20)
+                            on_playground = True
+                            break
 
         near_food = (food_dist < 20.0) and (food_dist < 990.0)
         can_feed = (near_food and self.satiety < 0.95) or (motor_commands["feed"] > 0.15 and food_dist < 24.0)
@@ -564,8 +630,15 @@ class FruitFlyAgent:
                     self.angular_velocity = steer_diff * 3.2 + turn_noise
                     walk_speed = 22.0
                 elif self.entertainment < 0.65 and self.satiety > 0.30:
-                    wheel_dx = 45.0 - self.x
-                    wheel_dy = 140.0 - self.y
+                    dest_choice = self.id % 3
+                    if dest_choice == 0:
+                        target_x, target_y = 45.0, 140.0  # Wheel
+                    elif dest_choice == 1:
+                        target_x, target_y = 110.0, 95.0  # Swing
+                    else:
+                        target_x, target_y = 75.0, 42.0   # TV Lounge
+                    wheel_dx = target_x - self.x
+                    wheel_dy = target_y - self.y
                     target_yaw = math.atan2(wheel_dy, wheel_dx)
                     steer_diff = (target_yaw - self.heading + math.pi) % (2 * math.pi) - math.pi
                     self.angular_velocity = steer_diff * 3.0 + turn_noise
@@ -643,6 +716,7 @@ class FruitFlyAgent:
         # Entertainment decay & Dynamic Mood Dynamics
         self.entertainment = max(0.0, self.entertainment - 0.005 * dt_sec)
         self.exercise_cooldown = max(0.0, getattr(self, 'exercise_cooldown', 0.0) - dt_sec)
+        self.sitting_cooldown = max(0.0, getattr(self, 'sitting_cooldown', 0.0) - dt_sec)
         
         # Satiety-driven positive mood (being well-fed keeps flies happy and content)
         if self.satiety > 0.50:
@@ -681,6 +755,8 @@ class FruitFlyAgent:
             "speed": round(self.speed, 2),
             "hitbox": {"radius": self.hitbox_radius, "length": self.hitbox_length},
             "is_airborne": self.is_airborne,
+            "is_sitting": getattr(self, "is_sitting", False),
+            "sitting_chair_id": getattr(self, "sitting_chair_id", None),
 
             "action": self.last_action_tag,
             "is_singing": self.is_singing,

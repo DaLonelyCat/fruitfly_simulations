@@ -84,7 +84,7 @@ class SimulationEnvironment:
             },
             {
                 "id": 4,
-                "x": 50.0, "y": 150.0, "z": 0.0,
+                "x": 160.0, "y": 140.0, "z": 0.0,
                 "vz": 0.0, "settled": True,
                 "radius": 8.0, "height": 8.0,
                 "amount": 90.0,
@@ -117,11 +117,24 @@ class SimulationEnvironment:
             "angle": 0.0, "angular_vel": 0.0
         }
         self.hanging_swing = {
-            "anchor_x": 110.0, "anchor_y": 95.0, "anchor_z": 52.0,
-            "length": 26.0,
+            "anchor_x": 110.0, "anchor_y": 95.0, "anchor_z": 46.5,
+            "length": 22.0,
             "angle_x": 0.0, "angle_y": 0.0,
             "vel_x": 0.0, "vel_y": 0.0
         }
+
+        # Spotify TV Lounge & Armchairs
+        self.tv = {
+            "x": 75.0, "y": 24.0, "z": 0.0,
+            "width": 14.0, "height": 11.0, "depth": 7.0,
+            "channel": "Spotify Chill Beats",
+            "is_on": True
+        }
+        self.lounge_chairs = [
+            {"id": "chair_left", "x": 65.0, "y": 42.0, "z": 0.0, "seat_z": 2.2, "target_yaw": -1.2, "occupied_by": None},
+            {"id": "chair_center", "x": 75.0, "y": 44.0, "z": 0.0, "seat_z": 2.2, "target_yaw": -1.57, "occupied_by": None},
+            {"id": "chair_right", "x": 85.0, "y": 42.0, "z": 0.0, "seat_z": 2.2, "target_yaw": -1.94, "occupied_by": None}
+        ]
 
     @property
     def is_drought(self):
@@ -611,6 +624,17 @@ class SimulationEnvironment:
                 "angle_x": round(self.hanging_swing["angle_x"], 3),
                 "angle_y": round(self.hanging_swing["angle_y"], 3)
             },
+            "tv": self.tv,
+            "lounge_chairs": [
+                {
+                    "id": c["id"],
+                    "x": c["x"], "y": c["y"], "z": c["z"],
+                    "seat_z": c["seat_z"],
+                    "target_yaw": c["target_yaw"],
+                    "occupied_by": c.get("occupied_by")
+                }
+                for c in getattr(self, "lounge_chairs", [])
+            ],
             "drought_timer": round(self.drought_timer, 1),
             "is_drought": len(self.food_patches) == 0,
             "acoustic_waves": [

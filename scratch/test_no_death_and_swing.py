@@ -62,7 +62,11 @@ def test_no_death_and_hanging_moss_swing():
     assert abs(env.hanging_swing['vel_x'] - initial_vel_x) > 0.001, "Airborne fly wake should nudge the swing"
 
     # C. Perching on the moss swing seat
-    perching_fly = FruitFlyAgent(fly_id=30, archetype_name="Romeo", x=110.0, y=95.0, z=27.0)
+    sw = env.hanging_swing
+    sw_x = sw["anchor_x"] + sw["length"] * math.sin(sw["angle_x"])
+    sw_y = sw["anchor_y"] + sw["length"] * math.sin(sw["angle_y"])
+    sw_z = sw["anchor_z"] - sw["length"] * math.cos(sw["angle_x"])
+    perching_fly = FruitFlyAgent(fly_id=30, archetype_name="Romeo", x=sw_x, y=sw_y, z=sw_z + 1.0)
     perching_fly.is_airborne = False
     perching_fly.entertainment = 0.2
     

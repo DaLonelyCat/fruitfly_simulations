@@ -110,9 +110,37 @@
               <button id="tool-remove-food" class="tool-btn btn-danger-toggle" title="Click food in terrarium to remove it" aria-pressed="false">Remove</button>
               <button id="btn-clear-food" class="tool-btn" title="Clear all food items from terrarium">Clear All</button>
               <button id="btn-toggle-hitbox" class="tool-btn active" title="Toggle 3D collision hitboxes">Hitboxes: ON</button>
+              <button id="btn-toggle-nametags" class="tool-btn active" title="Toggle Minecraft-style fly nametags">Nametags: ON</button>
+              <button id="btn-toggle-music" class="tool-btn" title="Open Spotify TV Lounge Player">Spotify TV</button>
               <button id="btn-fly-takeoff" class="tool-btn btn-takeoff" title="Trigger 3D takeoff and flight for selected fly">Takeoff</button>
               <button id="btn-reset-cam-arena" class="tool-btn" title="Reset Camera View">Reset Cam</button>
             </div>
+          </div>
+        </div>
+
+        <!-- Spotify TV Music Lounge Center (Collapsible / Interactive) -->
+        <div id="spotify-music-bar" class="spotify-music-bar" role="region" aria-label="Spotify Music Lounge Controls">
+          <div class="spotify-bar-main">
+            <div class="spotify-status-indicator">
+              <span class="spotify-wave-dot"></span>
+              <span class="spotify-bar-title">&#x1F4FB; Spotify Terrarium TV:</span>
+              <span class="spotify-track-name" id="spotify-current-track">Lofi Hip Hop &bull; Beats to Relax/Fly to</span>
+            </div>
+            <div class="spotify-station-presets">
+              <button class="spotify-preset-btn active" data-spotify-id="37i9dQZF1DXdLEN7aqioXM" data-title="Lofi Hip Hop (Beats to Study/Relax)">Lo-Fi</button>
+              <button class="spotify-preset-btn" data-spotify-id="37i9dQZF1DX4WYpdgoIcn6" data-title="Chill Tracks (Ambient Chillout)">Chill</button>
+              <button class="spotify-preset-btn" data-spotify-id="37i9dQZF1DWWEWGlK6zP9E" data-title="Peaceful Piano (Classical Vivarium)">Classical</button>
+              <button class="spotify-preset-btn" data-spotify-id="37i9dQZF1DXdLEN7aqioXM" data-title="Synthwave Beats (Retro Vibe)">Synth</button>
+            </div>
+            <div class="spotify-custom-url-group">
+              <input type="text" id="spotify-url-input" class="spotify-url-input" placeholder="Paste Spotify Track / Playlist URL..." aria-label="Custom Spotify URL">
+              <button id="btn-load-spotify-url" class="spotify-load-btn" title="Load custom Spotify track or playlist">Load</button>
+            </div>
+            <button id="btn-close-spotify-bar" class="spotify-close-btn" title="Hide Spotify Lounge Bar">&times;</button>
+          </div>
+          <!-- Official Spotify Embed Player -->
+          <div class="spotify-embed-container" id="spotify-embed-container">
+            <iframe id="spotify-iframe" style="border-radius:10px" src="https://open.spotify.com/embed/playlist/37i9dQZF1DXdLEN7aqioXM?utm_source=generator&theme=0" width="100%" height="80" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
           </div>
         </div>
 

@@ -95,10 +95,10 @@
           <div class="dock-section">
             <span class="dock-label">Drop Food:</span>
             <div class="food-tools-group" role="group" aria-label="Drop Food Patches">
-              <button id="tool-fig" class="tool-btn food-btn" title="Drop split rotting fig with golden seeds (+Dopamine)">Fig</button>
-              <button id="tool-grapes" class="tool-btn food-btn" title="Place bruised vineyard grapes (+Dopamine)">Grapes</button>
-              <button id="tool-banana" class="tool-btn food-btn" title="Drop ripe banana slice (+Dopamine)">Banana</button>
-              <button id="tool-sugar" class="tool-btn food-btn" title="Place crystalline sugar cube (++Dopamine)">Sugar</button>
+              <button id="tool-fig" class="tool-btn food-btn" title="Drop split rotting fig with golden seeds (+Dopamine)" aria-pressed="false">Fig</button>
+              <button id="tool-grapes" class="tool-btn food-btn" title="Place bruised vineyard grapes (+Dopamine)" aria-pressed="false">Grapes</button>
+              <button id="tool-banana" class="tool-btn food-btn" title="Drop ripe banana slice (+Dopamine)" aria-pressed="false">Banana</button>
+              <button id="tool-sugar" class="tool-btn food-btn" title="Place crystalline sugar cube (++Dopamine)" aria-pressed="false">Sugar</button>
             </div>
           </div>
 
@@ -109,9 +109,9 @@
               <button id="tool-select" class="tool-btn active" title="Select and Inspect 3D Fly" aria-pressed="true">Inspect</button>
               <button id="tool-remove-food" class="tool-btn btn-danger-toggle" title="Click food in terrarium to remove it" aria-pressed="false">Remove</button>
               <button id="btn-clear-food" class="tool-btn" title="Clear all food items from terrarium">Clear All</button>
-              <button id="btn-toggle-hitbox" class="tool-btn active" title="Toggle 3D collision hitboxes">Hitboxes: ON</button>
-              <button id="btn-toggle-nametags" class="tool-btn active" title="Toggle Minecraft-style fly nametags">Nametags: ON</button>
-              <button id="btn-toggle-music" class="tool-btn" title="Open Spotify TV Lounge Player">Spotify TV</button>
+              <button id="btn-toggle-hitbox" class="tool-btn active" title="Toggle 3D collision hitboxes" aria-pressed="true">Hitboxes: ON</button>
+              <button id="btn-toggle-nametags" class="tool-btn active" title="Toggle Minecraft-style fly nametags" aria-pressed="true">Nametags: ON</button>
+              <button id="btn-toggle-music" class="tool-btn active" title="Toggle Spotify TV Lounge Player" aria-pressed="true">Spotify TV</button>
               <button id="btn-fly-takeoff" class="tool-btn btn-takeoff" title="Trigger 3D takeoff and flight for selected fly">Takeoff</button>
               <button id="btn-reset-cam-arena" class="tool-btn" title="Reset Camera View">Reset Cam</button>
             </div>
@@ -130,13 +130,13 @@
               <button class="spotify-preset-btn active" data-spotify-id="37i9dQZF1DXdLEN7aqioXM" data-title="Lofi Hip Hop (Beats to Study/Relax)">Lo-Fi</button>
               <button class="spotify-preset-btn" data-spotify-id="37i9dQZF1DX4WYpdgoIcn6" data-title="Chill Tracks (Ambient Chillout)">Chill</button>
               <button class="spotify-preset-btn" data-spotify-id="37i9dQZF1DWWEWGlK6zP9E" data-title="Peaceful Piano (Classical Vivarium)">Classical</button>
-              <button class="spotify-preset-btn" data-spotify-id="37i9dQZF1DXdLEN7aqioXM" data-title="Synthwave Beats (Retro Vibe)">Synth</button>
+              <button class="spotify-preset-btn" data-spotify-id="37i9dQZF1DXd48TTfs6phM" data-title="Synthwave Beats (Retro Vibe)">Synth</button>
             </div>
             <div class="spotify-custom-url-group">
               <input type="text" id="spotify-url-input" class="spotify-url-input" placeholder="Paste Spotify Track / Playlist URL..." aria-label="Custom Spotify URL">
               <button id="btn-load-spotify-url" class="spotify-load-btn" title="Load custom Spotify track or playlist">Load</button>
             </div>
-            <button id="btn-close-spotify-bar" class="spotify-close-btn" title="Hide Spotify Lounge Bar">&times;</button>
+            <button id="btn-close-spotify-bar" class="spotify-close-btn" title="Hide Spotify Lounge Bar" aria-label="Hide Spotify Lounge Bar">&times;</button>
           </div>
           <!-- Official Spotify Embed Player -->
           <div class="spotify-embed-container" id="spotify-embed-container">
@@ -189,8 +189,8 @@
 
         <!-- Live Social Interaction Log -->
         <div class="events-ticker-container">
-          <div class="ticker-title">Live Social &amp; Dopamine Events:</div>
-          <div class="events-ticker" id="events-ticker">
+          <div class="ticker-title">Live Social &amp; Neural Events:</div>
+          <div class="events-ticker" id="events-ticker" role="log" aria-live="polite">
             <div class="ticker-item placeholder">Flies exploring naturalistic vivarium...</div>
           </div>
         </div>
@@ -289,16 +289,16 @@
         </div>
 
         <!-- Tabbed Brain Views -->
-        <div class="tabs-nav" role="tablist">
-          <button class="tab-btn active" data-tab="tab-3d-brain" role="tab" aria-selected="true">3D Anatomical Brain</button>
-          <button class="tab-btn" data-tab="tab-circuit" role="tab" aria-selected="false">2D Synapse Circuit</button>
-          <button class="tab-btn" data-tab="tab-compass" role="tab" aria-selected="false">Compass (CX EPG)</button>
-          <button class="tab-btn" data-tab="tab-neurochemistry" role="tab" aria-selected="false">Mutant Lab &amp; Dopamine</button>
-          <button class="tab-btn" data-tab="tab-social" role="tab" aria-selected="false">Social Leaderboard</button>
+        <div class="tabs-nav" role="tablist" aria-label="Connectome Brain Views">
+          <button class="tab-btn active" id="tab-btn-3d-brain" data-tab="tab-3d-brain" role="tab" aria-selected="true" aria-controls="tab-3d-brain">3D Anatomical Brain</button>
+          <button class="tab-btn" id="tab-btn-circuit" data-tab="tab-circuit" role="tab" aria-selected="false" aria-controls="tab-circuit">2D Synapse Circuit</button>
+          <button class="tab-btn" id="tab-btn-compass" data-tab="tab-compass" role="tab" aria-selected="false" aria-controls="tab-compass">Compass (CX EPG)</button>
+          <button class="tab-btn" id="tab-btn-neurochemistry" data-tab="tab-neurochemistry" role="tab" aria-selected="false" aria-controls="tab-neurochemistry">Mutant Lab &amp; Dopamine</button>
+          <button class="tab-btn" id="tab-btn-social" data-tab="tab-social" role="tab" aria-selected="false" aria-controls="tab-social">Social Leaderboard</button>
         </div>
 
         <!-- Tab 1: 3D Anatomical Brain (DeepMind Reference) -->
-        <div class="tab-content active" id="tab-3d-brain" role="tabpanel">
+        <div class="tab-content active" id="tab-3d-brain" role="tabpanel" aria-labelledby="tab-btn-3d-brain">
           <div class="three-container brain-3d-box" id="brain-3d-container">
             <div class="brain-labels-overlay">
               <span class="anat-tag tag-cyan">Optic Lobes</span>
@@ -315,14 +315,14 @@
         </div>
 
         <!-- Tab 2: 2D Synaptic Circuit Diagram -->
-        <div class="tab-content" id="tab-circuit" role="tabpanel">
+        <div class="tab-content" id="tab-circuit" role="tabpanel" aria-labelledby="tab-btn-circuit">
           <div class="circuit-container">
             <canvas id="circuit-canvas" width="460" height="300"></canvas>
           </div>
         </div>
 
         <!-- Tab 3: Ring Attractor Head Direction Compass -->
-        <div class="tab-content" id="tab-compass" role="tabpanel">
+        <div class="tab-content" id="tab-compass" role="tabpanel" aria-labelledby="tab-btn-compass">
           <div class="compass-layout">
             <div class="compass-dial-box">
               <canvas id="compass-canvas" width="180" height="180"></canvas>
@@ -341,7 +341,7 @@
         </div>
 
         <!-- Tab 4: Neurogenetics & Dopamine Sliders -->
-        <div class="tab-content" id="tab-neurochemistry" role="tabpanel">
+        <div class="tab-content" id="tab-neurochemistry" role="tabpanel" aria-labelledby="tab-btn-neurochemistry">
           <div class="mutant-presets">
             <span class="preset-label">Genetic Mutants &amp; Optogenetic Clamps:</span>
             <div class="preset-btn-row">
@@ -413,7 +413,7 @@
         </div>
 
         <!-- Tab 5: Dominance & Social Leaderboard -->
-        <div class="tab-content" id="tab-social" role="tabpanel">
+        <div class="tab-content" id="tab-social" role="tabpanel" aria-labelledby="tab-btn-social">
           <div class="social-summary-grid">
             <div class="summary-card">
               <div class="card-title">Dominance Leaderboard (Fights Won)</div>

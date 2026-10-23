@@ -318,7 +318,7 @@ body {
 }
 
 .dock-label {
-  font-size: 10.5px;
+  font-size: 11.5px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -463,9 +463,9 @@ body {
 }
 
 .drought-feed-btn {
-  background: linear-gradient(135deg, #ef4444, #b91c1c);
+  background: linear-gradient(135deg, #dc2626, #991b1b);
   color: #ffffff;
-  border: 1px solid #f87171;
+  border: 1px solid #ef4444;
   border-radius: var(--radius-xs);
   padding: 6px 14px;
   font-size: 12px;
@@ -601,20 +601,33 @@ body {
   box-shadow: 0 0 6px rgba(16, 185, 129, 0.3);
 }
 
+.spotify-url-input.input-error {
+  border-color: #ef4444;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.45);
+  animation: inputShake 0.3s ease-in-out;
+}
+
+@keyframes inputShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
 .spotify-load-btn {
   padding: 4px 10px;
   font-size: 11px;
   font-weight: 600;
-  background-color: #059669;
+  background-color: #047857;
   color: #ffffff;
   border: none;
   border-radius: var(--radius-xs);
   cursor: pointer;
-  transition: background-color var(--transition-fast);
+  transition: all var(--transition-fast);
 }
 
 .spotify-load-btn:hover {
   background-color: #10b981;
+  color: #022c22;
 }
 
 .spotify-close-btn {
@@ -1127,7 +1140,7 @@ body {
 }
 
 .anat-tag {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   padding: 2px 7px;
   border-radius: var(--radius-xs);
@@ -1168,14 +1181,14 @@ body {
 }
 
 .pop-name {
-  font-size: 10.5px;
+  font-size: 11.5px;
   font-weight: 600;
   color: var(--text-secondary);
 }
 
 .pop-rate {
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: 11.5px;
   font-weight: 700;
   color: var(--accent-cyan);
 }
@@ -1249,7 +1262,7 @@ body {
   align-items: center;
   gap: 4px;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   color: var(--text-muted);
 }
 
@@ -1409,7 +1422,7 @@ body {
 }
 
 .pair-badge {
-  font-size: 10.5px;
+  font-size: 11.5px;
   padding: 3px 8px;
   border-radius: var(--radius-xs);
   background-color: var(--bg-core);

@@ -363,15 +363,25 @@
     // Add Fly Modal
     btnAddFly.addEventListener('click', () => {
       addFlyModal.classList.remove('hidden');
+      if (btnConfirmSpawn) btnConfirmSpawn.focus();
     });
 
     btnCancelSpawn.addEventListener('click', () => {
       addFlyModal.classList.add('hidden');
+      btnAddFly.focus();
     });
 
     btnConfirmSpawn.addEventListener('click', () => {
       sendCommand({ action: 'add_fly', archetype: selectedSpawnArchetype });
       addFlyModal.classList.add('hidden');
+      btnAddFly.focus();
+    });
+
+    addFlyModal.addEventListener('click', (e) => {
+      if (e.target === addFlyModal) {
+        addFlyModal.classList.add('hidden');
+        btnAddFly.focus();
+      }
     });
 
     // Fullscreen Toggle
@@ -392,6 +402,11 @@
     }
 
     window.addEventListener('keydown', (e) => {
+      if (e.code === 'Escape' && addFlyModal && !addFlyModal.classList.contains('hidden')) {
+        addFlyModal.classList.add('hidden');
+        if (btnAddFly) btnAddFly.focus();
+        return;
+      }
       if (e.code === 'KeyF' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
         toggleFullscreen();
       }
@@ -522,13 +537,17 @@
       btnToggleMusic.addEventListener('click', () => {
         const isHidden = spotifyMusicBar.classList.toggle('hidden');
         btnToggleMusic.classList.toggle('active', !isHidden);
+        btnToggleMusic.setAttribute('aria-pressed', (!isHidden).toString());
       });
     }
 
     if (btnCloseSpotifyBar && spotifyMusicBar) {
       btnCloseSpotifyBar.addEventListener('click', () => {
         spotifyMusicBar.classList.add('hidden');
-        if (btnToggleMusic) btnToggleMusic.classList.remove('active');
+        if (btnToggleMusic) {
+          btnToggleMusic.classList.remove('active');
+          btnToggleMusic.setAttribute('aria-pressed', 'false');
+        }
       });
     }
 
@@ -558,6 +577,7 @@
 
       const match = url.match(/(track|playlist|album|artist|episode)[\/:]([a-zA-Z0-9]+)/);
       if (match) {
+        spotifyUrlInput.classList.remove('input-error');
         const type = match[1];
         const id = match[2];
         const standardUrl = `https://open.spotify.com/${type}/${id}`;
@@ -568,7 +588,10 @@
         document.querySelectorAll('.spotify-preset-btn').forEach((b) => b.classList.remove('active'));
         loadSpotifyOembedCover(standardUrl, `Custom ${type.toUpperCase()}`);
       } else {
-        alert('Please enter a valid Spotify track, playlist, or album link (e.g. https://open.spotify.com/track/...)');
+        spotifyUrlInput.classList.add('input-error');
+        if (spotifyCurrentTrack) {
+          spotifyCurrentTrack.textContent = 'Invalid Spotify URL format. Use open.spotify.com/track/...';
+        }
       }
     }
 
@@ -576,6 +599,9 @@
       btnLoadSpotifyUrl.addEventListener('click', loadCustomSpotifyUrl);
     }
     if (spotifyUrlInput) {
+      spotifyUrlInput.addEventListener('input', () => {
+        spotifyUrlInput.classList.remove('input-error');
+      });
       spotifyUrlInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
           e.preventDefault();
@@ -927,8 +953,10 @@
 
   function updateEventsTicker(events) {
     if (!events || events.length === 0) return;
+    const socialEvents = events.filter((ev) => ev.type === 'courtship' || ev.type === 'aggression');
+    if (socialEvents.length === 0) return;
     eventsTicker.innerHTML = '';
-    const slice = events.slice(-8).reverse();
+    const slice = socialEvents.slice(-8).reverse();
     slice.forEach((ev) => {
       const item = document.createElement('div');
       item.className = `ticker-item ${ev.type}`;
